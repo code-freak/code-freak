@@ -10,17 +10,13 @@ query GetAnswer($id: ID!) {
 
 query GetAnswerFile($id: ID!, $path: String!) {
   answerFile(answerId: $id, path: $path) {
-    collectionDigest
-    path
+    ...basicFileAttributes
     content
-    type
   }
 }
 
 query getAnswerFileList($id: ID!) {
   answerFiles(answerId: $id) {
-    collectionDigest
-    path
-    type
+    ...basicFileAttributes
   }
 }

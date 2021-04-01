@@ -1,13 +1,12 @@
 import {
+  DownCircleOutlined,
   ExclamationCircleTwoTone,
-  UpCircleOutlined,
-  DownCircleOutlined
+  UpCircleOutlined
 } from '@ant-design/icons'
 import { Alert, Button, Card, Col, Modal, Row } from 'antd'
 import moment from 'moment'
 import { useCallback, useContext, useEffect, useState } from 'react'
 import AnswerBlocker from '../../components/AnswerBlocker'
-import AnswerFileBrowser from '../../components/AnswerFileBrowser'
 import ArchiveDownload from '../../components/ArchiveDownload'
 import AsyncPlaceholder from '../../components/AsyncContainer'
 import FileImport from '../../components/FileImport'
@@ -15,6 +14,10 @@ import useMomentReached from '../../hooks/useMomentReached'
 import { useServerNow } from '../../hooks/useServerTimeOffset'
 import {
   Answer,
+  FileContextType,
+  GetAnswerFileListDocument,
+  ListFilesDocument,
+  ListFilesQueryVariables,
   Submission,
   useGetAnswerQuery,
   useImportAnswerSourceMutation,
@@ -24,6 +27,7 @@ import {
 import { messageService } from '../../services/message'
 import { displayName } from '../../services/user'
 import { DifferentUserContext } from '../task/TaskPage'
+import FileBrowser from '../../components/FileBrowser'
 
 type AnswerWithSubmissionDeadline = Pick<Answer, 'id'> & {
   submission: Pick<Submission, 'deadline'>
@@ -38,7 +42,13 @@ const DangerZone: React.FC<DangerZoneProps> = props => {
   const { id } = props.answer
   const { deadline } = props.answer.submission
   const [resetAnswer, { loading: resetLoading }] = useResetAnswerMutation({
-    variables: { id }
+    variables: { id },
+    refetchQueries: [
+      {
+        query: GetAnswerFileListDocument,
+        variables: { answerId: id }
+      }
+    ]
   })
   const [showDangerZone, setShowDangerZone] = useState<boolean>(false)
   const toggleDangerZone = useCallback(() => {
@@ -118,28 +128,38 @@ const DangerZone: React.FC<DangerZoneProps> = props => {
 
 interface UploadAnswerProps {
   answer: AnswerWithSubmissionDeadline
-  onUpload?: () => void
 }
 
 const UploadAnswer: React.FC<UploadAnswerProps> = props => {
   const { id } = props.answer
   const { deadline } = props.answer.submission
+  const refetchQueries = [
+    {
+      query: ListFilesDocument,
+      variables: {
+        context: {
+          id,
+          type: FileContextType.Answer
+        },
+        path: '/'
+      } as ListFilesQueryVariables
+    }
+  ]
   const [
     uploadSource,
     { loading: uploading, data: uploadSuccess }
-  ] = useUploadAnswerSourceMutation()
+  ] = useUploadAnswerSourceMutation({
+    refetchQueries
+  })
 
   const [
     importSource,
     { loading: importing, data: importSucess }
-  ] = useImportAnswerSourceMutation()
+  ] = useImportAnswerSourceMutation({
+    refetchQueries
+  })
 
-  const onUpload = (files: File[]) =>
-    uploadSource({ variables: { files, id } }).then(() => {
-      if (props.onUpload) {
-        props.onUpload()
-      }
-    })
+  const onUpload = (files: File[]) => uploadSource({ variables: { files, id } })
 
   const onImport = (url: string) => importSource({ variables: { url, id } })
 
@@ -168,9 +188,6 @@ const AnswerPage: React.FC<{ answerId: string }> = props => {
     variables: { id: props.answerId }
   })
   const differentUser = useContext(DifferentUserContext)
-  const [reloadFiles, setReloadFiles] = useState<() => void>(() => {
-    return () => undefined
-  })
 
   if (result.data === undefined) {
     return <AsyncPlaceholder result={result} />
@@ -181,10 +198,6 @@ const AnswerPage: React.FC<{ answerId: string }> = props => {
   const filesTitle = differentUser
     ? `Files uploaded by ${displayName(differentUser)}`
     : 'Your current submission'
-
-  // if we want to store a function in state we have to wrap it in another callback
-  // otherwise React will execute the function
-  const onFileTreeReady = (reload: () => void) => setReloadFiles(() => reload)
 
   return (
     <>
@@ -204,16 +217,12 @@ const AnswerPage: React.FC<{ answerId: string }> = props => {
             style={{ marginBottom: 16 }}
           />
         )}
-        <AnswerFileBrowser
-          answerId={answer.id}
-          review={!!differentUser}
-          onReady={onFileTreeReady}
-        />
+        <FileBrowser id={answer.id} type={FileContextType.Answer} />
       </Card>
       {!differentUser && (
         <>
-          <UploadAnswer answer={answer} onUpload={reloadFiles} />
-          <DangerZone answer={answer} onReset={reloadFiles} />
+          <UploadAnswer answer={answer} />
+          <DangerZone answer={answer} />
         </>
       )}
     </>

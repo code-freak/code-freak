@@ -1,0 +1,8 @@
+fragment basicFileAttributes on File {
+  collectionDigest
+  lastModified
+  path
+  type
+  mode
+  size
+}

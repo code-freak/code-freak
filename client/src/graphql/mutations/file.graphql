@@ -1,0 +1,7 @@
+mutation DeleteFile($context: FileContextInput!, $paths: [String!]!) {
+  deleteFile(fileContext: $context, paths: $paths)
+}
+
+mutation MoveFile($context: FileContextInput!, $sourcePaths: [String!]!, $target: String!) {
+  moveFile(fileContext: $context, sources: $sourcePaths, target: $target)
+}

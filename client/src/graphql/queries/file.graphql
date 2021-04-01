@@ -1,0 +1,5 @@
+query ListFiles($context: FileContextInput!, $path: String!) {
+  listFiles(fileContext: $context, path: $path) {
+    ...basicFileAttributes
+  }
+}

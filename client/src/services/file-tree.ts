@@ -16,14 +16,14 @@ interface RootNode<T> extends TreeNode<T> {
 }
 
 const abspath = (path: string) => resolve('/', path)
-const isSamePath = (a: string, b: string) => abspath(a) === abspath(b)
+export const isSamePath = (a: string, b: string) => abspath(a) === abspath(b)
 
 /**
  * List all directory names of path and all parents
  *
  * @param path
  */
-const dirnames = (path: string): string[] => {
+export const dirnames = (path: string): string[] => {
   const dirs: string[] = []
   while (!isSamePath(dirname(path), path)) {
     dirs.push((path = dirname(path)))
