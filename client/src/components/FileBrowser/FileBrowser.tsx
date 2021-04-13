@@ -2,21 +2,17 @@ import React, { useMemo } from 'react'
 import { useFormatter } from '../../hooks/useFormatter'
 import {
   BasicFileAttributesFragment,
-  FileContextType,
-  ListFilesDocument,
-  useDeleteFileMutation,
-  useListFilesQuery,
-  useMoveFileMutation
+  FileContextType
 } from '../../services/codefreak-api'
 import AntdFileManager from '@codefreak/antd-file-manager'
 import { ColumnsType } from 'antd/es/table'
-import { isSamePath } from '../../services/file-tree'
 import { basename, dirname, join } from 'path'
 import FileBrowserBreadcrumb from './FileBrowserBreadcrumb'
 import { Button, Col, Row } from 'antd'
 import { ReloadOutlined } from '@ant-design/icons'
 import { messageService } from '../../services/message'
 import { useMutableQueryParam } from '../../hooks/useQuery'
+import useFileCollection from '../../hooks/useFileCollection'
 
 export interface FileBrowserProps {
   type: FileContextType
@@ -32,22 +28,15 @@ export interface FileBrowserFile {
   lastModified: string
 }
 
-const isDotDir = (path: string) => path.match(/^\.+\/+$/)
-
 const apiFilesToFileManagerFiles = (
-  prefix: string,
   apiFiles: BasicFileAttributesFragment[]
 ): FileBrowserFile[] => {
-  return apiFiles
-    .filter(file => {
-      return isSamePath(dirname(file.path), prefix) && !isDotDir(file.path)
-    })
-    .map(file => ({
-      ...file,
-      size: file.size !== null ? file.size : undefined,
-      path: file.path.replace(/^\.+\/+/, ''),
-      type: file.type === 'FILE' ? 'file' : 'directory'
-    }))
+  return apiFiles.map(file => ({
+    ...file,
+    size: file.size !== null ? file.size : undefined,
+    path: file.path.replace(/^\.+\/+/, ''),
+    type: file.type === 'FILE' ? 'file' : 'directory'
+  }))
 }
 
 const FileBrowser: React.FC<FileBrowserProps> = props => {
@@ -57,35 +46,27 @@ const FileBrowser: React.FC<FileBrowserProps> = props => {
     'path',
     defaultPath
   )
-  const context = {
-    type,
-    id
-  }
-  const variables = {
-    context,
-    path: currentPath
-  }
-  const refetchQueries = [
+  const {
+    files: apiFiles,
+    loading,
+    moveFiles,
+    reloadFiles,
+    deleteFiles,
+    createDirectory,
+    uploadFiles
+  } = useFileCollection(
     {
-      query: ListFilesDocument,
-      variables
-    }
-  ]
-  const [deleteFile, { loading: deleteLoading }] = useDeleteFileMutation({
-    refetchQueries
-  })
-  const [moveFile, { loading: moveLoading }] = useMoveFileMutation({
-    refetchQueries
-  })
-  const filesQuery = useListFilesQuery({
-    variables
-  })
+      type,
+      id
+    },
+    currentPath
+  )
   const files: FileBrowserFile[] = useMemo(() => {
-    if (!filesQuery.data?.listFiles) {
+    if (!apiFiles) {
       return []
     }
-    return apiFilesToFileManagerFiles(currentPath, filesQuery.data?.listFiles)
-  }, [filesQuery.data, currentPath])
+    return apiFilesToFileManagerFiles(apiFiles)
+  }, [apiFiles])
 
   const onDoubleClickRow = (node: FileBrowserFile) => {
     if (node.type === 'directory') {
@@ -93,15 +74,9 @@ const FileBrowser: React.FC<FileBrowserProps> = props => {
     }
   }
 
-  const moveByPaths = async (sourcePaths: string[], target: string) => {
+  const moveWithFeedback = async (sourcePaths: string[], target: string) => {
     try {
-      await moveFile({
-        variables: {
-          context,
-          sourcePaths,
-          target
-        }
-      })
+      await moveFiles(sourcePaths, target)
 
       if (sourcePaths.length === 1) {
         messageService.success(
@@ -117,7 +92,28 @@ const FileBrowser: React.FC<FileBrowserProps> = props => {
     }
   }
 
-  const loading = filesQuery.loading || moveLoading || deleteLoading
+  const onAddDir = async (parent: string, newDirName: string) => {
+    await createDirectory(join(parent, newDirName))
+  }
+
+  const onDeleteFiles = async (filesToDelete: FileBrowserFile[]) => {
+    const paths = filesToDelete.map(file => file.path)
+    await deleteFiles(paths)
+  }
+
+  const onRenameFile = async (file: FileBrowserFile, newName: string) => {
+    const target = join(dirname(file.path), newName)
+    return moveWithFeedback([file.path], target)
+  }
+
+  const onDragDropMove = async (
+    sources: FileBrowserFile[],
+    target: FileBrowserFile
+  ) => {
+    const sourcePaths = sources.map(source => source.path)
+    return moveWithFeedback(sourcePaths, target.path)
+  }
+
   return (
     <>
       <Row>
@@ -125,6 +121,7 @@ const FileBrowser: React.FC<FileBrowserProps> = props => {
           <FileBrowserBreadcrumb
             path={currentPath}
             onPathClick={setCurrentPath}
+            onAddDir={onAddDir}
           />
         </Col>
         <Col span={6} style={{ textAlign: 'right' }}>
@@ -132,7 +129,7 @@ const FileBrowser: React.FC<FileBrowserProps> = props => {
             icon={<ReloadOutlined />}
             size="small"
             loading={loading}
-            onClick={() => filesQuery.refetch()}
+            onClick={reloadFiles}
           >
             Reload
           </Button>
@@ -181,22 +178,12 @@ const FileBrowser: React.FC<FileBrowserProps> = props => {
           }
         }}
         data={files}
-        onDelete={nodes => {
-          const paths = nodes.map(source => source.path)
-          deleteFile({
-            variables: {
-              context,
-              paths
-            }
-          })
-        }}
-        onRename={(node, newName) => {
-          const target = join(dirname(node.path), newName)
-          return moveByPaths([node.path], target)
-        }}
-        onDrop={(sources, target) => {
-          const sourcePaths = sources.map(source => source.path)
-          return moveByPaths(sourcePaths, target.path)
+        onDelete={onDeleteFiles}
+        onRename={onRenameFile}
+        onDrop={onDragDropMove}
+        onDropFiles={(droppedFiles, _, target) => {
+          const targetPath = target?.path || currentPath
+          return uploadFiles(targetPath, droppedFiles)
         }}
       />
     </>

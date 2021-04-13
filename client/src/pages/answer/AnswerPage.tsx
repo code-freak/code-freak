@@ -46,7 +46,7 @@ const DangerZone: React.FC<DangerZoneProps> = props => {
     refetchQueries: [
       {
         query: GetAnswerFileListDocument,
-        variables: { answerId: id }
+        variables: { id }
       }
     ]
   })

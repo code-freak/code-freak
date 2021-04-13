@@ -1,7 +1,19 @@
-mutation DeleteFile($context: FileContextInput!, $paths: [String!]!) {
-  deleteFile(fileContext: $context, paths: $paths)
+mutation DeleteFiles($context: FileContextInput!, $paths: [String!]!) {
+  deleteFiles(fileContext: $context, paths: $paths)
 }
 
-mutation MoveFile($context: FileContextInput!, $sourcePaths: [String!]!, $target: String!) {
-  moveFile(fileContext: $context, sources: $sourcePaths, target: $target)
+mutation MoveFiles(
+  $context: FileContextInput!
+  $sourcePaths: [String!]!
+  $target: String!
+) {
+  moveFiles(fileContext: $context, sources: $sourcePaths, target: $target)
+}
+
+mutation CreateDirectory($context: FileContextInput!, $path: String!) {
+  createDirectory(fileContext: $context, path: $path)
+}
+
+mutation UploadFiles($context: FileContextInput!, $dir: String!, $files: [Upload!]!) {
+  uploadFiles(fileContext: $context, dir: $dir, files: $files)
 }
