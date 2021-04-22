@@ -1,0 +1,97 @@
+@import '~antd/es/style/themes/default';
+
+tr.file-manager-row-valid-drop-target-over {
+  // outline the row
+  td {
+    background-color: @table-selected-row-bg;
+    // top & bottom
+    box-shadow: inset 0 2px 0 darken(@table-selected-row-bg, 20%),
+      inset 0 -2px 0 darken(@table-selected-row-bg, 20%);
+  }
+  td:first-child {
+    // left & bottom & top
+    box-shadow: inset 2px 0 0 darken(@table-selected-row-bg, 20%),
+      inset 0 2px 0 darken(@table-selected-row-bg, 20%),
+      inset 0 -2px 0 darken(@table-selected-row-bg, 20%);
+  }
+  td:last-child {
+    // right & bottom & top
+    box-shadow: inset -2px 0 0 darken(@table-selected-row-bg, 20%),
+      inset 0 2px 0 darken(@table-selected-row-bg, 20%),
+      inset 0 -2px 0 darken(@table-selected-row-bg, 20%);
+  }
+}
+
+.file-manager-row-invalid-drop-target {
+  td {
+    opacity: 0.4;
+  }
+}
+
+table.file-manager-valid-drop-target-over {
+  // outline the table
+  thead {
+    tr:first-child {
+      th {
+        background-color: @table-selected-row-bg;
+        // top
+        box-shadow: inset 0 2px 0 darken(@table-selected-row-bg, 20%);
+      }
+      th:first-child {
+        // left and top
+        box-shadow: inset 0 2px 0 darken(@table-selected-row-bg, 20%),
+          inset 2px 0 0 darken(@table-selected-row-bg, 20%);
+      }
+      th:last-child {
+        // right and top
+        box-shadow: inset 0 2px 0 darken(@table-selected-row-bg, 20%),
+          inset -2px 0 0 darken(@table-selected-row-bg, 20%);
+      }
+    }
+  }
+  tbody {
+    td {
+      background-color: @table-selected-row-bg;
+    }
+    td:first-child {
+      // left
+      box-shadow: inset 2px 0 0 darken(@table-selected-row-bg, 20%);
+    }
+    td:last-child {
+      // right
+      box-shadow: inset -2px 0 0 darken(@table-selected-row-bg, 20%);
+    }
+    tr:last-child {
+      td {
+        // bottom
+        box-shadow: inset 0 -2px 0 darken(@table-selected-row-bg, 20%);
+      }
+      td:first-child {
+        // left & bottom
+        box-shadow: inset 2px 0 0 darken(@table-selected-row-bg, 20%),
+          inset 0 -2px 0 darken(@table-selected-row-bg, 20%);
+      }
+      td:last-child {
+        // right & bottom
+        box-shadow: inset -2px 0 0 darken(@table-selected-row-bg, 20%),
+          inset 0 -2px 0 darken(@table-selected-row-bg, 20%);
+      }
+      td:last-child:first-child {
+        // right & bottom & left (when only a single column)
+        box-shadow: inset -2px 0 0 darken(@table-selected-row-bg, 20%),
+          inset 0 -2px 0 darken(@table-selected-row-bg, 20%),
+          inset 2px 0 0 darken(@table-selected-row-bg, 20%);
+      }
+    }
+  }
+  td,
+  th {
+    background-color: @table-selected-row-bg !important;
+  }
+}
+
+.file-manager-row-cut {
+  td {
+    color: @disabled-color;
+  }
+}

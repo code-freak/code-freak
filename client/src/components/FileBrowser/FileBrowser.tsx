@@ -1,18 +1,27 @@
-import React, { useMemo } from 'react'
+import React, { useMemo, useRef, useState } from 'react'
 import { useFormatter } from '../../hooks/useFormatter'
 import {
   BasicFileAttributesFragment,
   FileContextType
 } from '../../services/codefreak-api'
-import AntdFileManager from '@codefreak/antd-file-manager'
+import AntdFileManager, { AntdDragLayer } from '@codefreak/antd-file-manager'
 import { ColumnsType } from 'antd/es/table'
 import { basename, dirname, join } from 'path'
 import FileBrowserBreadcrumb from './FileBrowserBreadcrumb'
-import { Button, Col, Row } from 'antd'
-import { ReloadOutlined } from '@ant-design/icons'
+import { Button, Col, Modal, Row } from 'antd'
+import {
+  DeleteFilled,
+  ReloadOutlined,
+  ScissorOutlined,
+  SnippetsOutlined
+} from '@ant-design/icons'
 import { messageService } from '../../services/message'
 import { useMutableQueryParam } from '../../hooks/useQuery'
 import useFileCollection from '../../hooks/useFileCollection'
+import { DndProvider } from 'react-dnd'
+import { HTML5Backend } from 'react-dnd-html5-backend'
+
+import './FileBrowser.less'
 
 export interface FileBrowserProps {
   type: FileContextType
@@ -21,8 +30,9 @@ export interface FileBrowserProps {
 }
 
 export interface FileBrowserFile {
-  path: string
   type: 'directory' | 'file'
+  path: string
+  basename: string
   size?: number
   mode: number
   lastModified: string
@@ -33,10 +43,21 @@ const apiFilesToFileManagerFiles = (
 ): FileBrowserFile[] => {
   return apiFiles.map(file => ({
     ...file,
+    // be careful with a size of 0
     size: file.size !== null ? file.size : undefined,
-    path: file.path.replace(/^\.+\/+/, ''),
+    basename: basename(file.path),
     type: file.type === 'FILE' ? 'file' : 'directory'
   }))
+}
+
+const dataTransferToFiles = (items: DataTransferItemList): File[] => {
+  const files = []
+  for (let i = 0; i < items.length; i++) {
+    const file = items[i].getAsFile()
+    const entry = items[i].webkitGetAsEntry()
+    if (entry && entry.isFile && file) files.push(file)
+  }
+  return files
 }
 
 const FileBrowser: React.FC<FileBrowserProps> = props => {
@@ -46,6 +67,12 @@ const FileBrowser: React.FC<FileBrowserProps> = props => {
     'path',
     defaultPath
   )
+  const [deletingFiles, setDeletingFiles] = useState<
+    FileBrowserFile[] | undefined
+  >()
+  const [cutFiles, setCutFiles] = useState<FileBrowserFile[] | undefined>()
+  const [pasteFiles, setPasteFiles] = useState<FileBrowserFile[] | undefined>()
+  const [selectedFiles, setSelectedFiles] = useState<FileBrowserFile[]>([])
   const {
     files: apiFiles,
     loading,
@@ -96,12 +123,8 @@ const FileBrowser: React.FC<FileBrowserProps> = props => {
     await createDirectory(join(parent, newDirName))
   }
 
-  const onDeleteFiles = async (filesToDelete: FileBrowserFile[]) => {
-    const paths = filesToDelete.map(file => file.path)
-    await deleteFiles(paths)
-  }
-
   const onRenameFile = async (file: FileBrowserFile, newName: string) => {
+    setCutFiles(undefined)
     const target = join(dirname(file.path), newName)
     return moveWithFeedback([file.path], target)
   }
@@ -114,8 +137,9 @@ const FileBrowser: React.FC<FileBrowserProps> = props => {
     return moveWithFeedback(sourcePaths, target.path)
   }
 
+  const wrapperRef = useRef<HTMLDivElement>(null)
   return (
-    <>
+    <div ref={wrapperRef} style={{ position: 'relative' }}>
       <Row>
         <Col span={18}>
           <FileBrowserBreadcrumb
@@ -126,67 +150,173 @@ const FileBrowser: React.FC<FileBrowserProps> = props => {
         </Col>
         <Col span={6} style={{ textAlign: 'right' }}>
           <Button
+            disabled={selectedFiles.length === 0}
+            size="small"
+            loading={loading}
+            icon={<DeleteFilled />}
+            onClick={() => setDeletingFiles(selectedFiles)}
+          >
+            Delete
+          </Button>{' '}
+          <Button
+            disabled={!cutFiles || !!pasteFiles}
+            icon={<SnippetsOutlined />}
+            size="small"
+            loading={loading}
+            onClick={() => {
+              setPasteFiles(cutFiles)
+            }}
+          >
+            Paste Files {cutFiles ? `(${cutFiles.length})` : ''}
+          </Button>{' '}
+          <Button
+            disabled={selectedFiles.length === 0}
+            icon={<ScissorOutlined />}
+            size="small"
+            loading={loading}
+            onClick={() => {
+              setCutFiles(selectedFiles)
+            }}
+          >
+            Cut Files
+          </Button>{' '}
+          <Button
             icon={<ReloadOutlined />}
             size="small"
             loading={loading}
             onClick={reloadFiles}
           >
             Reload
-          </Button>
+          </Button>{' '}
         </Col>
       </Row>
-      <AntdFileManager
-        antdTableProps={{
-          loading
+      <Modal
+        title={`Really delete ${deletingFiles?.length} files?`}
+        onOk={async () => {
+          if (!deletingFiles) return
+          try {
+            await deleteFiles(deletingFiles.map(file => file.path))
+          } finally {
+            setDeletingFiles(undefined)
+            // this will get out of sync with the table when deleting a single file
+            // table has to support a controlled mode
+            setSelectedFiles([])
+          }
         }}
-        additionalColumns={
-          [
-            {
-              width: '10%',
-              key: 'size',
-              sorter: (a, b) => (a.size || 0) - (b.size || 0),
-              title: 'Size',
-              dataIndex: 'size',
-              render: (size: number, node) => {
-                return node.type === 'directory' ? '-' : formatBytes(size)
+        onCancel={() => setDeletingFiles(undefined)}
+        visible={deletingFiles !== undefined}
+      >
+        This will delete the following files:
+        <ul>
+          {deletingFiles?.map(file => (
+            <li key={file.path}>{file.basename}</li>
+          ))}
+        </ul>
+      </Modal>
+      <Modal
+        title={`Move ${pasteFiles?.length} files to ${currentPath}?`}
+        onOk={async () => {
+          if (!pasteFiles) return
+          try {
+            await moveFiles(
+              pasteFiles.map(file => file.path),
+              currentPath
+            )
+          } finally {
+            setPasteFiles(undefined)
+            setCutFiles(undefined)
+            // this will get out of sync with the table when deleting a single file
+            // table has to support a controlled mode
+            setSelectedFiles([])
+          }
+        }}
+        onCancel={() => setPasteFiles(undefined)}
+        visible={pasteFiles !== undefined}
+      >
+        This will move the following files to the current directory:
+        <ul>
+          {pasteFiles?.map(file => (
+            <li key={file.path}>{file.basename}</li>
+          ))}
+        </ul>
+      </Modal>
+      <DndProvider backend={HTML5Backend}>
+        <AntdDragLayer relativeToElement={wrapperRef} />
+        <AntdFileManager
+          dataSource={files}
+          dataKey="path"
+          canDropFiles
+          hideNativeDragPreview
+          antdTableProps={{
+            loading
+          }}
+          onSelectionChange={setSelectedFiles}
+          additionalColumns={
+            [
+              {
+                width: '10%',
+                key: 'size',
+                sorter: (a, b) => (a.size || 0) - (b.size || 0),
+                title: 'Size',
+                dataIndex: 'size',
+                render: (size: number, node) => {
+                  return node.type === 'directory' ? '-' : formatBytes(size)
+                }
+              },
+              {
+                width: '10%',
+                key: 'lastModified',
+                title: 'Last Modified',
+                dataIndex: 'lastModified',
+                render: (value: string) => (
+                  <span style={{ whiteSpace: 'nowrap' }}>
+                    {formatDateTime(value)}
+                  </span>
+                )
               }
-            },
-            {
-              width: '10%',
-              key: 'lastModified',
-              title: 'Last Modified',
-              dataIndex: 'lastModified',
-              render: (value: string) => (
-                <span style={{ whiteSpace: 'nowrap' }}>
-                  {formatDateTime(value)}
-                </span>
-              )
+            ] as ColumnsType<FileBrowserFile>
+          }
+          additionalRowProperties={(item, currentProps) => {
+            let additionalProps = {}
+            if (cutFiles?.includes(item)) {
+              additionalProps = {
+                className: `${
+                  currentProps.className || ''
+                } file-manager-row-cut`
+              }
             }
-          ] as ColumnsType<FileBrowserFile>
-        }
-        onDoubleClickRow={onDoubleClickRow}
-        invalidDropTargetProps={{
-          style: {
-            opacity: 0.3
-          }
-        }}
-        validDropTargetOverProps={{
-          style: {
-            position: 'relative',
-            zIndex: 1,
-            outline: '5px solid rgba(0, 255, 0, .3)'
-          }
-        }}
-        data={files}
-        onDelete={onDeleteFiles}
-        onRename={onRenameFile}
-        onDrop={onDragDropMove}
-        onDropFiles={(droppedFiles, _, target) => {
-          const targetPath = target?.path || currentPath
-          return uploadFiles(targetPath, droppedFiles)
-        }}
-      />
-    </>
+            return {
+              ...currentProps,
+              ...additionalProps
+            }
+          }}
+          onDoubleClickItem={onDoubleClickRow}
+          itemDndStatusProps={{
+            invalidDropTargetProps: {
+              className: 'file-manager-row-invalid-drop-target'
+            },
+            validDropTargetOverProps: {
+              className: 'file-manager-row-valid-drop-target-over'
+            }
+          }}
+          rootDndStatusProps={{
+            validDropTargetOverProps: {
+              className: 'file-manager-valid-drop-target-over'
+            }
+          }}
+          onDeleteItems={setDeletingFiles}
+          onRenameItem={onRenameFile}
+          onDropItems={onDragDropMove}
+          onDropFiles={(droppedFiles, target) => {
+            const targetPath = target?.path || currentPath
+            const filesToUpload = dataTransferToFiles(droppedFiles)
+            if (filesToUpload.length) {
+              return uploadFiles(targetPath, filesToUpload)
+            }
+          }}
+        />
+      </DndProvider>
+    </div>
   )
 }
 
