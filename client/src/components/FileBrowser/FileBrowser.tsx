@@ -4,7 +4,10 @@ import {
   BasicFileAttributesFragment,
   FileContextType
 } from '../../services/codefreak-api'
-import AntdFileManager, { AntdDragLayer } from '@codefreak/antd-file-manager'
+import AntdFileManager, {
+  AntdDragLayer,
+  AntdFileManagerProps
+} from '@codefreak/antd-file-manager'
 import { ColumnsType } from 'antd/es/table'
 import { basename, dirname, join } from 'path'
 import FileBrowserBreadcrumb from './FileBrowserBreadcrumb'
@@ -144,6 +147,86 @@ const FileBrowser: React.FC<FileBrowserProps> = props => {
     return moveWithFeedback(sourcePaths, target.path)
   }
 
+  const getAdditionalRowProperties: AntdFileManagerProps<FileBrowserFile>['additionalRowProperties'] = (
+    item,
+    currentProps
+  ) => {
+    let additionalProps = {}
+    if (cutFiles && containsFileByPath(cutFiles, item)) {
+      additionalProps = {
+        className: `${currentProps.className || ''} file-manager-row-cut`
+      }
+    }
+    return {
+      ...currentProps,
+      ...additionalProps
+    }
+  }
+
+  const additionalColumns = [
+    {
+      width: '10%',
+      key: 'size',
+      sorter: (a, b) => (a.size || 0) - (b.size || 0),
+      title: 'Size',
+      dataIndex: 'size',
+      render: (size: number, node) => {
+        return node.type === 'directory' ? '-' : formatBytes(size)
+      }
+    },
+    {
+      width: '10%',
+      key: 'lastModified',
+      title: 'Last Modified',
+      dataIndex: 'lastModified',
+      render: (value: string) => (
+        <span style={{ whiteSpace: 'nowrap' }}>{formatDateTime(value)}</span>
+      )
+    }
+  ] as ColumnsType<FileBrowserFile>
+
+  const onDropFiles: AntdFileManagerProps<FileBrowserFile>['onDropFiles'] = (
+    droppedFiles,
+    target
+  ) => {
+    const targetPath = target?.path || currentPath
+    const filesToUpload = dataTransferToFiles(droppedFiles)
+    if (filesToUpload.length) {
+      return uploadFiles(targetPath, filesToUpload)
+    }
+  }
+
+  const onDeleteToolbar = () => setDeletingFiles(selectedFiles)
+  const onPasteToolbar = () => setPasteFiles(cutFiles)
+  const onCutToolbar = () => setCutFiles(selectedFiles)
+  const onReallyDeleteOk = async () => {
+    if (!deletingFiles) return
+    try {
+      await deleteFiles(deletingFiles.map(file => file.path))
+    } finally {
+      setDeletingFiles(undefined)
+      // this will get out of sync with the table when deleting a single file
+      // table has to support a controlled mode
+      setSelectedFiles([])
+    }
+  }
+  const onReallyDeleteCancel = () => setDeletingFiles(undefined)
+  const onReallyMoveOk = async () => {
+    if (!pasteFiles) return
+    try {
+      await moveFiles(
+        pasteFiles.map(file => file.path),
+        currentPath
+      )
+    } finally {
+      setPasteFiles(undefined)
+      setCutFiles(undefined)
+      // this will get out of sync with the table when deleting a single file
+      // table has to support a controlled mode
+      setSelectedFiles([])
+    }
+  }
+  const onReallyMoveCancel = () => setPasteFiles(undefined)
   const wrapperRef = useRef<HTMLDivElement>(null)
   return (
     <div ref={wrapperRef} style={{ position: 'relative' }}>
@@ -161,7 +244,7 @@ const FileBrowser: React.FC<FileBrowserProps> = props => {
             size="small"
             loading={loading}
             icon={<DeleteFilled />}
-            onClick={() => setDeletingFiles(selectedFiles)}
+            onClick={onDeleteToolbar}
           >
             Delete
           </Button>{' '}
@@ -170,9 +253,7 @@ const FileBrowser: React.FC<FileBrowserProps> = props => {
             icon={<SnippetsOutlined />}
             size="small"
             loading={loading}
-            onClick={() => {
-              setPasteFiles(cutFiles)
-            }}
+            onClick={onPasteToolbar}
           >
             Paste Files {cutFiles ? `(${cutFiles.length})` : ''}
           </Button>{' '}
@@ -181,9 +262,7 @@ const FileBrowser: React.FC<FileBrowserProps> = props => {
             icon={<ScissorOutlined />}
             size="small"
             loading={loading}
-            onClick={() => {
-              setCutFiles(selectedFiles)
-            }}
+            onClick={onCutToolbar}
           >
             Cut Files
           </Button>{' '}
@@ -199,18 +278,8 @@ const FileBrowser: React.FC<FileBrowserProps> = props => {
       </Row>
       <Modal
         title={`Really delete ${deletingFiles?.length} files?`}
-        onOk={async () => {
-          if (!deletingFiles) return
-          try {
-            await deleteFiles(deletingFiles.map(file => file.path))
-          } finally {
-            setDeletingFiles(undefined)
-            // this will get out of sync with the table when deleting a single file
-            // table has to support a controlled mode
-            setSelectedFiles([])
-          }
-        }}
-        onCancel={() => setDeletingFiles(undefined)}
+        onOk={onReallyDeleteOk}
+        onCancel={onReallyDeleteCancel}
         visible={deletingFiles !== undefined}
       >
         This will delete the following files:
@@ -222,22 +291,8 @@ const FileBrowser: React.FC<FileBrowserProps> = props => {
       </Modal>
       <Modal
         title={`Move ${pasteFiles?.length} files to ${currentPath}?`}
-        onOk={async () => {
-          if (!pasteFiles) return
-          try {
-            await moveFiles(
-              pasteFiles.map(file => file.path),
-              currentPath
-            )
-          } finally {
-            setPasteFiles(undefined)
-            setCutFiles(undefined)
-            // this will get out of sync with the table when deleting a single file
-            // table has to support a controlled mode
-            setSelectedFiles([])
-          }
-        }}
-        onCancel={() => setPasteFiles(undefined)}
+        onOk={onReallyMoveOk}
+        onCancel={onReallyMoveCancel}
         visible={pasteFiles !== undefined}
       >
         This will move the following files to the current directory:
@@ -258,45 +313,8 @@ const FileBrowser: React.FC<FileBrowserProps> = props => {
             loading
           }}
           onSelectionChange={setSelectedFiles}
-          additionalColumns={
-            [
-              {
-                width: '10%',
-                key: 'size',
-                sorter: (a, b) => (a.size || 0) - (b.size || 0),
-                title: 'Size',
-                dataIndex: 'size',
-                render: (size: number, node) => {
-                  return node.type === 'directory' ? '-' : formatBytes(size)
-                }
-              },
-              {
-                width: '10%',
-                key: 'lastModified',
-                title: 'Last Modified',
-                dataIndex: 'lastModified',
-                render: (value: string) => (
-                  <span style={{ whiteSpace: 'nowrap' }}>
-                    {formatDateTime(value)}
-                  </span>
-                )
-              }
-            ] as ColumnsType<FileBrowserFile>
-          }
-          additionalRowProperties={(item, currentProps) => {
-            let additionalProps = {}
-            if (cutFiles && containsFileByPath(cutFiles, item)) {
-              additionalProps = {
-                className: `${
-                  currentProps.className || ''
-                } file-manager-row-cut`
-              }
-            }
-            return {
-              ...currentProps,
-              ...additionalProps
-            }
-          }}
+          additionalColumns={additionalColumns}
+          additionalRowProperties={getAdditionalRowProperties}
           onDoubleClickItem={onDoubleClickRow}
           itemDndStatusProps={{
             invalidDropTargetProps: {
@@ -314,13 +332,7 @@ const FileBrowser: React.FC<FileBrowserProps> = props => {
           onDeleteItems={setDeletingFiles}
           onRenameItem={onRenameFile}
           onDropItems={onDragDropMove}
-          onDropFiles={(droppedFiles, target) => {
-            const targetPath = target?.path || currentPath
-            const filesToUpload = dataTransferToFiles(droppedFiles)
-            if (filesToUpload.length) {
-              return uploadFiles(targetPath, filesToUpload)
-            }
-          }}
+          onDropFiles={onDropFiles}
         />
       </DndProvider>
     </div>
