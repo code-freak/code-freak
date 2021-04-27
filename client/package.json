@@ -6,8 +6,6 @@
     "@ant-design/icons": "4.6.2",
     "@ant-design/pro-layout": "5.0.19",
     "@apollo/client": "3.3.15",
-    "@codefreak/antd-file-manager": "0.2.2",
-    "@apollo/client": "3.3.15",
     "@codefreak/antd-file-manager": "^0.3.1",
     "@codefreak/docs": "file:../docs",
     "@craco/craco": "6.1.1",
