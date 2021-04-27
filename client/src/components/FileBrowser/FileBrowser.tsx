@@ -86,9 +86,6 @@ const FileBrowser: React.FC<FileBrowserProps> = props => {
     currentPath
   )
   const files: FileBrowserFile[] = useMemo(() => {
-    if (!apiFiles) {
-      return []
-    }
     return apiFilesToFileManagerFiles(apiFiles)
   }, [apiFiles])
 

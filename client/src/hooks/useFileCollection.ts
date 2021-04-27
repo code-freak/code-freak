@@ -10,8 +10,8 @@ import {
 } from '../generated/graphql'
 import { join } from 'path'
 
-interface UseFileCollectionReturn {
-  files?: BasicFileAttributesFragment[]
+export interface FileCollectionScope {
+  files: BasicFileAttributesFragment[]
   loading: boolean
   reloadFiles: () => Promise<void>
   deleteFiles: (name: string[]) => Promise<string[]>
@@ -20,10 +20,14 @@ interface UseFileCollectionReturn {
   uploadFiles: (path: string, files: File[]) => Promise<string[]>
 }
 
+/**
+ * Get an object with the current files of a collection in the given path
+ * and a set of methods to operate on the files of the collection.
+ */
 const useFileCollection = (
   context: FileContextInput,
   workingDir: string
-): UseFileCollectionReturn => {
+): FileCollectionScope => {
   const abspath = (path: string) => {
     if (path.startsWith('/')) return path
     return join(workingDir, path)
@@ -43,7 +47,9 @@ const useFileCollection = (
   const [deleteFiles, deleteFileResult] = useDeleteFilesMutation(
     commonMutationOptions
   )
-  const [moveFiles, moveFileResult] = useMoveFilesMutation(commonMutationOptions)
+  const [moveFiles, moveFileResult] = useMoveFilesMutation(
+    commonMutationOptions
+  )
   const [createDirectory, createDirectoryResult] = useCreateDirectoryMutation(
     commonMutationOptions
   )
@@ -54,14 +60,14 @@ const useFileCollection = (
     variables
   })
   return {
-    files: filesQuery.data?.listFiles,
+    files: filesQuery.data?.listFiles || [],
     loading:
       filesQuery.loading ||
       deleteFileResult.loading ||
       moveFileResult.loading ||
       createDirectoryResult.loading ||
       uploadFilesResult.loading,
-    reloadFiles: () => filesQuery.refetch().then(() => {}),
+    reloadFiles: () => filesQuery.refetch().then(() => undefined),
     createDirectory: (dirName: string) => {
       const path = abspath(dirName)
       return createDirectory({
