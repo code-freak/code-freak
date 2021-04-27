@@ -50,6 +50,13 @@ const apiFilesToFileManagerFiles = (
   }))
 }
 
+const containsFileByPath = (
+  haystack: FileBrowserFile[],
+  needle: FileBrowserFile
+): boolean => {
+  return haystack.find(file => file.path === needle.path) !== undefined
+}
+
 const dataTransferToFiles = (items: DataTransferItemList): File[] => {
   const files = []
   for (let i = 0; i < items.length; i++) {
@@ -278,7 +285,7 @@ const FileBrowser: React.FC<FileBrowserProps> = props => {
           }
           additionalRowProperties={(item, currentProps) => {
             let additionalProps = {}
-            if (cutFiles?.includes(item)) {
+            if (cutFiles && containsFileByPath(cutFiles, item)) {
               additionalProps = {
                 className: `${
                   currentProps.className || ''
