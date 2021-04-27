@@ -11,35 +11,16 @@ import AntdFileManager, {
 import { ColumnsType } from 'antd/es/table'
 import { basename, dirname, join } from 'path'
 import FileBrowserBreadcrumb from './FileBrowserBreadcrumb'
-import { Button, Col, Modal, Row } from 'antd'
-import {
-  DeleteFilled,
-  ReloadOutlined,
-  ScissorOutlined,
-  SnippetsOutlined
-} from '@ant-design/icons'
+import { Col, Modal, Row } from 'antd'
 import { messageService } from '../../services/message'
 import { useMutableQueryParam } from '../../hooks/useQuery'
 import useFileCollection from '../../hooks/useFileCollection'
 import { DndProvider } from 'react-dnd'
 import { HTML5Backend } from 'react-dnd-html5-backend'
+import { FileBrowserFile } from './interfaces'
 
 import './FileBrowser.less'
-
-export interface FileBrowserProps {
-  type: FileContextType
-  id: string
-  defaultPath?: string
-}
-
-export interface FileBrowserFile {
-  type: 'directory' | 'file'
-  path: string
-  basename: string
-  size?: number
-  mode: number
-  lastModified: string
-}
+import FileBrowserToolbar from './FileBrowserToolbar'
 
 const apiFilesToFileManagerFiles = (
   apiFiles: BasicFileAttributesFragment[]
@@ -68,6 +49,12 @@ const dataTransferToFiles = (items: DataTransferItemList): File[] => {
     if (entry && entry.isFile && file) files.push(file)
   }
   return files
+}
+
+export interface FileBrowserProps {
+  type: FileContextType
+  id: string
+  defaultPath?: string
 }
 
 const FileBrowser: React.FC<FileBrowserProps> = props => {
@@ -171,7 +158,10 @@ const FileBrowser: React.FC<FileBrowserProps> = props => {
       title: 'Size',
       dataIndex: 'size',
       render: (size: number, node) => {
-        return node.type === 'directory' ? '-' : formatBytes(size)
+        if (node.type === 'directory') {
+          return '-'
+        }
+        return formatBytes(size)
       }
     },
     {
@@ -239,41 +229,15 @@ const FileBrowser: React.FC<FileBrowserProps> = props => {
           />
         </Col>
         <Col span={6} style={{ textAlign: 'right' }}>
-          <Button
-            disabled={selectedFiles.length === 0}
-            size="small"
+          <FileBrowserToolbar
             loading={loading}
-            icon={<DeleteFilled />}
-            onClick={onDeleteToolbar}
-          >
-            Delete
-          </Button>{' '}
-          <Button
-            disabled={!cutFiles || !!pasteFiles}
-            icon={<SnippetsOutlined />}
-            size="small"
-            loading={loading}
-            onClick={onPasteToolbar}
-          >
-            Paste Files {cutFiles ? `(${cutFiles.length})` : ''}
-          </Button>{' '}
-          <Button
-            disabled={selectedFiles.length === 0}
-            icon={<ScissorOutlined />}
-            size="small"
-            loading={loading}
-            onClick={onCutToolbar}
-          >
-            Cut Files
-          </Button>{' '}
-          <Button
-            icon={<ReloadOutlined />}
-            size="small"
-            loading={loading}
-            onClick={reloadFiles}
-          >
-            Reload
-          </Button>{' '}
+            selectedFiles={selectedFiles}
+            cutFiles={cutFiles || []}
+            onDelete={onDeleteToolbar}
+            onCut={onCutToolbar}
+            onPaste={onPasteToolbar}
+            onReload={reloadFiles}
+          />
         </Col>
       </Row>
       <Modal
