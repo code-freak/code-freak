@@ -253,6 +253,31 @@ class JpaFileService : FileService {
     return ByteArrayInputStream(byteArrayOf())
   }
 
+  override fun renameFile(collectionId: UUID, source: String, target: String) {
+    requireValidPath(source)
+    requireValidPath(target)
+    val sourceEntry = findEntry(collectionId, TarUtil.normalizeFileName(source))
+        ?: throw IllegalArgumentException("$source does not exist")
+    val targetEntry = findEntry(collectionId, TarUtil.normalizeFileName(target))
+    when {
+      targetEntry != null && targetEntry.name == sourceEntry.name -> return // renaming file to itself. done
+      targetEntry != null -> throw IllegalArgumentException("Target already exists")
+    }
+
+    val replaceMap: Map<String, String> = if (sourceEntry.isDirectory) {
+      mapOf(
+          // Rename everything starting with /foo/bar/* to /foo/baz/*
+          TarUtil.normalizeDirectoryName(source) to TarUtil.normalizeDirectoryName(target)
+      )
+    } else {
+      mapOf(
+          // /foo/bar to /foo/baz
+          TarUtil.normalizeFileName(source) to TarUtil.normalizeFileName(target)
+      )
+    }
+    renameByPrefixInCollection(collectionId, replaceMap)
+  }
+
   override fun moveFile(collectionId: UUID, sources: Set<String>, target: String) {
     if (sources.isEmpty()) {
       throw IllegalArgumentException("At least a single source has to be given")
@@ -271,72 +296,51 @@ class JpaFileService : FileService {
       }
     }
 
-    // The following part will create a "replace map" for each source and target depending on the target type.
-    // The map is a search->replace string pair where each path starting with search will be replaced.
-    // Three cases must be handled:
-    // 1. rename a file (1:1 rename of /foo/bar to /foo/baz)
-    // -> sources.size == 1 && target does not exist && source is file
-    // 2. rename a dir (everything prefixed with /foo/bar/* and /foo/bar itself to /foo/baz)
-    // -> sources.size == 1 && target does not exist && source is dir
-    // 3. move multiple items to dir (prefix every basename (!) of source with target)
-    // -> target exists && target is dir
-
     val targetEntry = findEntry(collectionId, target)
-    val replaceMap: Map<String, String>
-    if (targetEntry == null) {
-      // renaming dir or file
-      if (sources.size > 1) {
-        throw IllegalArgumentException("$target is not a directory")
-      }
-      val renameSource = normalizedSources.first()
-      replaceMap = if (renameSource.endsWith("/")) {
-        // renaming a directory
-        // we have to rename everything with prefix /foo/bar/* and /foo/bar itself
-        mapOf(
-            renameSource to TarUtil.normalizeDirectoryName(target),
-            renameSource.withoutTrailingSlash() to TarUtil.normalizeFileName(target)
+    when {
+      targetEntry == null -> throw IllegalArgumentException("$target does not exist")
+      !targetEntry.isDirectory -> throw IllegalArgumentException("Cannot move to $target: Is not directory")
+    }
+
+    // The following part will create a "replace map" for each source and target.
+    // The map is a search->replace string pair where each path starting with search will be replaced.
+    // This will prefix every basename (!) of source with target
+
+    // prefix is now something like /hello/world/
+    val targetPrefix = TarUtil.normalizeDirectoryName(target)
+    val replaceMap: Map<String, String> = normalizedSources.flatMap { normalizedSource ->
+      val sourceBasename = Paths.get("/$normalizedSource").fileName.toString()
+      if (normalizedSource.endsWith("/")) {
+        if (targetPrefix.startsWith(normalizedSource)) {
+          throw IllegalArgumentException("Cannot move '$normalizedSource' to a subdirectory of itself '$targetPrefix'")
+        }
+
+        listOf(
+            Pair(normalizedSource, TarUtil.normalizeDirectoryName(targetPrefix + sourceBasename))
         )
       } else {
-        // renaming a file
-        // simple 1:1 mapping of /foo/bar to /foo/baz
-        mapOf(
-            renameSource to TarUtil.normalizeFileName(target)
+        listOf(
+            Pair(normalizedSource, TarUtil.normalizeFileName(targetPrefix + sourceBasename))
         )
       }
-    } else {
-      if (sources.size == 1 && TarUtil.normalizeFileName(target) == TarUtil.normalizeFileName(sources.first())) {
-        // Renaming a single item to itself. Our job is done here.
-        return
-      }
-      // move things to a directory
-      if (!targetEntry.isDirectory) {
-        throw IllegalArgumentException("Cannot move to $target: Is not directory")
-      }
-      // prefix is now something like /hello/world/
-      val targetPrefix = TarUtil.normalizeDirectoryName(target)
-      replaceMap = normalizedSources.flatMap { normalizedSource ->
-        val sourceBasename = Paths.get("/$normalizedSource").fileName.toString()
-        if (normalizedSource.endsWith("/")) {
-          if (targetPrefix.startsWith(normalizedSource)) {
-            throw IllegalArgumentException("Cannot move '$normalizedSource' to a subdirectory of itself '$targetPrefix'")
-          }
+    }.toMap()
 
-          listOf(
-              Pair(normalizedSource, TarUtil.normalizeDirectoryName(targetPrefix + sourceBasename)),
-              Pair(normalizedSource.withoutTrailingSlash(), TarUtil.normalizeFileName(targetPrefix + sourceBasename))
-          )
-        } else {
-          listOf(
-              Pair(normalizedSource, TarUtil.normalizeFileName(targetPrefix + sourceBasename))
-          )
-        }
-      }.toMap()
+    renameByPrefixInCollection(collectionId, replaceMap)
+  }
 
-      // make sure we will not override something in the new directory
-      replaceMap.forEach { (oldName, newName) ->
-        require(oldName == newName || !containsPath(collectionId, newName)) {
-          "Cannot move ${oldName.withoutTrailingSlash()} to $target: ${newName.withoutTrailingSlash()} already exists"
-        }
+  /**
+   * Replace filenames in an archive. ReplaceMap is a originalName -> newName map.
+   * For each file this will try to find a string starting with the key of the replacement map.
+   * The value of the first occurrence will be used to rename the file.
+   *
+   * Warning!
+   * If you want to rename a directory make sure to end the name with a slash.
+   */
+  private fun renameByPrefixInCollection(collectionId: UUID, replaceMap: Map<String, String>) {
+    // make sure we will not override something in the new directory
+    replaceMap.forEach { (oldName, newName) ->
+      require(oldName == newName || !containsPath(collectionId, newName)) {
+        "Cannot move ${oldName.withoutTrailingSlash()}: ${newName.withoutTrailingSlash()} already exists"
       }
     }
 
@@ -347,9 +351,21 @@ class JpaFileService : FileService {
           // find first matching replacement pattern and apply it to the name
           // otherwise leave the entry name untouched
           entry.name = replaceMap.entries.find { (search, _) ->
-            TarUtil.normalizeFileName(entry.name).startsWith(search)
+            if (search.endsWith("/")) {
+              // either match files inside the directory or the directory itself
+              TarUtil.normalizeFileName(entry.name).startsWith(search) || (
+                TarUtil.normalizeFileName(entry.name) == TarUtil.normalizeFileName(search)
+              )
+            } else {
+              // otherwise only a full match is valid
+              search == TarUtil.normalizeFileName(entry.name)
+            }
           }?.let { (search, replace) ->
-            TarUtil.normalizeFileName(entry.name).replaceRange(0, search.length, replace)
+            if (search.endsWith("/") && TarUtil.normalizeFileName(entry.name) != TarUtil.normalizeFileName(search)) {
+              TarUtil.normalizeFileName(entry.name).replaceRange(0, search.length, replace)
+            } else {
+              replace
+            }
           } ?: entry.name
 
           tar.putArchiveEntry(entry)

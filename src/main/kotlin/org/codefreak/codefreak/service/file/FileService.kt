@@ -70,13 +70,20 @@ interface FileService {
   fun deleteFiles(collectionId: UUID, paths: Set<String>)
 
   /**
+   * Rename a file or directory to target.
+   *  - Path must be an existing file or directory
+   *  - Target must not exist
+   *  - If source is a directory the full structure inside this directory will be preserved in target
+   *
+   * If one of the conditions above does not match an IllegalArgumentException is thrown.
+   */
+  @Throws(IllegalArgumentException::class)
+  fun renameFile(collectionId: UUID, source: String, target: String)
+
+  /**
    * Move one or multiple source files to target.
-   * The behaviour depends on the type of target.
-   * - Always:
+   * The behaviour is as follows:
    *   - All sources must be existing files or directories
-   * - If target does not exist (renaming a single file/directory):
-   *   - Only a single source is allowed
-   * - If target does exist (moving multiple files/dir to a folder):
    *   - Target must be an existing directory
    *   - One or multiple files are allowed
    *   - Target must not be one of the descendants of source (moving something to itself)

@@ -136,6 +136,12 @@ class FileMutation : BaseResolver(), Mutation {
     true
   }
 
+  fun renameFile(fileContext: FileContext, source: String, target: String): Boolean = context {
+    authorize(fileContext)
+    serviceAccess.getService(FileService::class).renameFile(fileContext.id, source, target)
+    true
+  }
+
   fun deleteFiles(fileContext: FileContext, paths: List<String>): Boolean = context {
     authorize(fileContext)
     serviceAccess.getService(FileService::class).deleteFiles(fileContext.id, paths.toSet())
