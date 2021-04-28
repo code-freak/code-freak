@@ -8,7 +8,8 @@ import {
   useMoveFilesMutation,
   useUploadFilesMutation
 } from '../generated/graphql'
-import { join } from 'path'
+import { basename, join } from 'path'
+import { messageService } from '../services/message'
 
 export interface FileCollectionScope {
   files: BasicFileAttributesFragment[]
@@ -75,34 +76,70 @@ const useFileCollection = (
           context,
           path
         }
-      }).then(() => path)
+      }).then(() => {
+        messageService.success(`Created directory ${path}!`)
+        return path
+      })
     },
     deleteFiles: (paths: string[]) => {
+      if (paths.length === 0) {
+        messageService.error(`There is nothing to delete`)
+        return Promise.reject()
+      }
       const absPaths = paths.map(path => abspath(path))
       return deleteFiles({
         variables: {
           context,
           paths: absPaths
         }
-      }).then(() => absPaths)
+      }).then(() => {
+        if (paths.length === 1) {
+          messageService.success(`Deleted ${basename(paths[0])} successfully`)
+        } else {
+          messageService.success(`Deleted ${paths.length} files successfully`)
+        }
+        return absPaths
+      })
     },
     moveFiles: (sourcePaths, target) => {
+      if (sourcePaths.length === 0) {
+        messageService.error(`There is nothing to move to ${basename(target)}`)
+        return Promise.reject()
+      }
       return moveFiles({
         variables: {
           context,
           sourcePaths,
           target
         }
-      }).then(() => sourcePaths)
+      }).then(() => {
+        if (sourcePaths.length === 1) {
+          messageService.success(`Moved ${sourcePaths[0]} to ${target}`)
+        } else {
+          messageService.success(
+            `Moved ${sourcePaths.length} files to ${target}`
+          )
+        }
+        return sourcePaths
+      })
     },
     uploadFiles: (dir, files) => {
+      if (files.length === 0) {
+        messageService.error(
+          'Found no files to upload. Maybe you uploaded an empty directory?'
+        )
+        return Promise.reject()
+      }
       return uploadFiles({
         variables: {
           context,
           dir,
           files
         }
-      }).then(() => files.map(file => join(dir, file.name)))
+      }).then(() => {
+        messageService.success(`Uploaded ${files.length} files successfully!`)
+        return files.map(file => join(dir, file.name))
+      })
     }
   }
 }

@@ -12,7 +12,6 @@ import { ColumnsType } from 'antd/es/table'
 import { basename, dirname, join } from 'path'
 import FileBrowserBreadcrumb from './FileBrowserBreadcrumb'
 import { Col, Modal, Row } from 'antd'
-import { messageService } from '../../services/message'
 import { useMutableQueryParam } from '../../hooks/useQuery'
 import useFileCollection from '../../hooks/useFileCollection'
 import { DndProvider } from 'react-dnd'
@@ -21,6 +20,7 @@ import { FileBrowserFile } from './interfaces'
 
 import './FileBrowser.less'
 import FileBrowserToolbar from './FileBrowserToolbar'
+import { dataTransferToFiles } from '../../services/uploads'
 
 const apiFilesToFileManagerFiles = (
   apiFiles: BasicFileAttributesFragment[]
@@ -34,83 +34,11 @@ const apiFilesToFileManagerFiles = (
   }))
 }
 
-const isDirectoryEntry = (
-  entry: FileSystemEntry
-): entry is FileSystemDirectoryEntry => entry.isDirectory
-const isFileEntry = (entry: FileSystemEntry): entry is FileSystemFileEntry =>
-  entry.isFile
-
 const containsFileByPath = (
   haystack: FileBrowserFile[],
   needle: FileBrowserFile
 ): boolean => {
   return haystack.find(file => file.path === needle.path) !== undefined
-}
-
-const entryFileAsPromise = (entry: FileSystemFileEntry): Promise<File> => {
-  return new Promise((resolve, reject) => {
-    entry.file(resolve, reject)
-  })
-}
-
-const drainDirectoryReader = (
-  reader: FileSystemDirectoryReader
-): Promise<File[]> => {
-  return new Promise((resolve, _) => {
-    reader.readEntries(entries => {
-      if (!entries.length) {
-        resolve([])
-        return
-      }
-      const promisedFiles: Promise<File>[] = []
-      const recursiveReaders: Promise<File[]>[] = []
-      for (const entry of entries) {
-        if (isFileEntry(entry)) {
-          promisedFiles.push(entryFileAsPromise(entry))
-        }
-        if (isDirectoryEntry(entry)) {
-          recursiveReaders.push(drainDirectoryReader(entry.createReader()))
-        }
-      }
-      // has to be called recursively until all files have been read...
-      recursiveReaders.push(drainDirectoryReader(reader))
-      // put it all together
-      Promise.all(recursiveReaders).then(recursiveFiles => {
-        Promise.all(promisedFiles).then(thisFiles => {
-          const allFiles = [
-            ...recursiveFiles.flatMap(rFiles => rFiles),
-            ...thisFiles
-          ]
-          resolve(allFiles)
-        })
-      })
-    })
-  })
-}
-
-const getUploadFilesRecursive = async (
-  entry: FileSystemDirectoryEntry
-): Promise<File[]> => {
-  return drainDirectoryReader(entry.createReader())
-}
-
-const dataTransferToFiles = (items: DataTransferItemList): File[] => {
-  const files = []
-  for (let i = 0; i < items.length; i++) {
-    const entry = items[i].webkitGetAsEntry()
-    if (!entry) continue
-    if (isFileEntry(entry)) {
-      const file = items[i].getAsFile()
-      if (!file) continue
-      files.push(file)
-    }
-    if (isDirectoryEntry(entry)) {
-      getUploadFilesRecursive(entry).then(uploadedFiles => {
-        console.log(uploadedFiles.map(file => file.webkitRelativePath))
-      })
-    }
-  }
-  return files
 }
 
 export interface FileBrowserProps {
@@ -157,24 +85,6 @@ const FileBrowser: React.FC<FileBrowserProps> = props => {
     }
   }
 
-  const moveWithFeedback = async (sourcePaths: string[], target: string) => {
-    try {
-      await moveFiles(sourcePaths, target)
-
-      if (sourcePaths.length === 1) {
-        messageService.success(
-          `Moved ${basename(sourcePaths[0])} to ${basename(target)}`
-        )
-      } else {
-        messageService.success(
-          `Moved ${sourcePaths.length} files to ${basename(target)}`
-        )
-      }
-    } catch (e) {
-      messageService.error(`Failed to move to ${basename(target)}`)
-    }
-  }
-
   const onAddDir = async (parent: string, newDirName: string) => {
     await createDirectory(join(parent, newDirName))
   }
@@ -182,7 +92,7 @@ const FileBrowser: React.FC<FileBrowserProps> = props => {
   const onRenameFile = async (file: FileBrowserFile, newName: string) => {
     setCutFiles(undefined)
     const target = join(dirname(file.path), newName)
-    return moveWithFeedback([file.path], target)
+    return moveFiles([file.path], target)
   }
 
   const onDragDropMove = async (
@@ -190,7 +100,7 @@ const FileBrowser: React.FC<FileBrowserProps> = props => {
     target: FileBrowserFile
   ) => {
     const sourcePaths = sources.map(source => source.path)
-    return moveWithFeedback(sourcePaths, target.path)
+    return moveFiles(sourcePaths, target.path)
   }
 
   const getAdditionalRowProperties: AntdFileManagerProps<FileBrowserFile>['additionalRowProperties'] = (
@@ -234,15 +144,14 @@ const FileBrowser: React.FC<FileBrowserProps> = props => {
     }
   ] as ColumnsType<FileBrowserFile>
 
-  const onDropFiles: AntdFileManagerProps<FileBrowserFile>['onDropFiles'] = (
+  const onDropFiles: AntdFileManagerProps<FileBrowserFile>['onDropFiles'] = async (
     droppedFiles,
     target
   ) => {
+    // target is undefined if drop occurred on the table and not on a row
     const targetPath = target?.path || currentPath
-    const filesToUpload = dataTransferToFiles(droppedFiles)
-    if (filesToUpload.length) {
-      return uploadFiles(targetPath, filesToUpload)
-    }
+    const filesToUpload = await dataTransferToFiles(droppedFiles)
+    await uploadFiles(targetPath, filesToUpload)
   }
 
   const onDeleteToolbar = () => setDeletingFiles(selectedFiles)
