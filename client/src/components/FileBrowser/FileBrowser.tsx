@@ -34,6 +34,12 @@ const apiFilesToFileManagerFiles = (
   }))
 }
 
+const isDirectoryEntry = (
+  entry: FileSystemEntry
+): entry is FileSystemDirectoryEntry => entry.isDirectory
+const isFileEntry = (entry: FileSystemEntry): entry is FileSystemFileEntry =>
+  entry.isFile
+
 const containsFileByPath = (
   haystack: FileBrowserFile[],
   needle: FileBrowserFile
@@ -41,12 +47,68 @@ const containsFileByPath = (
   return haystack.find(file => file.path === needle.path) !== undefined
 }
 
+const entryFileAsPromise = (entry: FileSystemFileEntry): Promise<File> => {
+  return new Promise((resolve, reject) => {
+    entry.file(resolve, reject)
+  })
+}
+
+const drainDirectoryReader = (
+  reader: FileSystemDirectoryReader
+): Promise<File[]> => {
+  return new Promise((resolve, _) => {
+    reader.readEntries(entries => {
+      if (!entries.length) {
+        resolve([])
+        return
+      }
+      const promisedFiles: Promise<File>[] = []
+      const recursiveReaders: Promise<File[]>[] = []
+      for (const entry of entries) {
+        if (isFileEntry(entry)) {
+          promisedFiles.push(entryFileAsPromise(entry))
+        }
+        if (isDirectoryEntry(entry)) {
+          recursiveReaders.push(drainDirectoryReader(entry.createReader()))
+        }
+      }
+      // has to be called recursively until all files have been read...
+      recursiveReaders.push(drainDirectoryReader(reader))
+      // put it all together
+      Promise.all(recursiveReaders).then(recursiveFiles => {
+        Promise.all(promisedFiles).then(thisFiles => {
+          const allFiles = [
+            ...recursiveFiles.flatMap(rFiles => rFiles),
+            ...thisFiles
+          ]
+          resolve(allFiles)
+        })
+      })
+    })
+  })
+}
+
+const getUploadFilesRecursive = async (
+  entry: FileSystemDirectoryEntry
+): Promise<File[]> => {
+  return drainDirectoryReader(entry.createReader())
+}
+
 const dataTransferToFiles = (items: DataTransferItemList): File[] => {
   const files = []
   for (let i = 0; i < items.length; i++) {
-    const file = items[i].getAsFile()
     const entry = items[i].webkitGetAsEntry()
-    if (entry && entry.isFile && file) files.push(file)
+    if (!entry) continue
+    if (isFileEntry(entry)) {
+      const file = items[i].getAsFile()
+      if (!file) continue
+      files.push(file)
+    }
+    if (isDirectoryEntry(entry)) {
+      getUploadFilesRecursive(entry).then(uploadedFiles => {
+        console.log(uploadedFiles.map(file => file.webkitRelativePath))
+      })
+    }
   }
   return files
 }
