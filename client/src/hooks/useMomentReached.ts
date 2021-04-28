@@ -15,7 +15,7 @@ export type NowFn = typeof Date.now
 const useMomentReached = (
   date: undefined | Moment,
   nowFn: NowFn = Date.now,
-  precision: number = 100
+  precision = 100
 ): boolean | undefined => {
   const checkDateReached = useCallback((): boolean | undefined => {
     const timestamp = date?.valueOf()

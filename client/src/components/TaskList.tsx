@@ -19,11 +19,13 @@ import Authorized from './Authorized'
 const { confirm } = Modal
 
 type Task = TaskListItemFragment & {
-  answer?: any
+  answer?: {
+    id: string
+  } | null
 }
 
 interface RenderProps {
-  delete: (taskId: string) => Promise<any>
+  delete: (taskId: string) => Promise<unknown>
 }
 
 const renderTask = (props: RenderProps) => (task: Task) => {

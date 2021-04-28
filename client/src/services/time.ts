@@ -16,7 +16,7 @@ export interface TimeComponents {
  */
 export const componentsToRelTime = (
   components: TimeComponents,
-  forceSeconds: boolean = false
+  forceSeconds = false
 ): string => {
   const { hours, minutes, seconds } = components
   if (hours + minutes + seconds <= 0) {

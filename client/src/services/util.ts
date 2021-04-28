@@ -17,7 +17,7 @@ export function makeUpdater<T, R>(
   }
 }
 
-export type Updater<T, R = any> = <P extends keyof T>(
+export type Updater<T, R = unknown> = <P extends keyof T>(
   propName: P
 ) => (propValue: T[P]) => Promise<R>
 

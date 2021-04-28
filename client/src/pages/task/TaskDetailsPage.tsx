@@ -276,9 +276,7 @@ const TaskDetailsPage: React.FC<{ editable: boolean }> = ({ editable }) => {
                     <span>
                       <b>Hidden files</b>{' '}
                       <Tooltip
-                        title={
-                          'Patterns of files that should be hidden from students. Matching files are only included for evaluation. If matching files are created by students, they are ignored for evaluation.'
-                        }
+                        title="Patterns of files that should be hidden from students. Matching files are only included for evaluation. If matching files are created by students, they are ignored for evaluation."
                         placement="bottom"
                       >
                         <InfoCircleFilled />
@@ -312,9 +310,7 @@ const TaskDetailsPage: React.FC<{ editable: boolean }> = ({ editable }) => {
                     <span>
                       <b>Protected files</b>{' '}
                       <Tooltip
-                        title={
-                          'Patterns of files that should be read-only. Students will be able to see matching files but modifications are ignored for evaluation. Non-existent files can be protected to prevent their creation.'
-                        }
+                        title="Patterns of files that should be read-only. Students will be able to see matching files but modifications are ignored for evaluation. Non-existent files can be protected to prevent their creation."
                         placement="bottom"
                       >
                         <InfoCircleFilled />

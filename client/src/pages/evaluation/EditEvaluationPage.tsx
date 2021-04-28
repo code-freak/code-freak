@@ -115,9 +115,11 @@ const EditEvaluationPage: React.FC<{ taskId: string }> = ({ taskId }) => {
       options: definition.options
     }
 
-    const runner = evaluationRunners.find(
-      r => r.name === definition.runnerName
-    )!
+    const runner = evaluationRunners.find(r => r.name === definition.runnerName)
+
+    if (!runner) {
+      return <>Unknown Runner '{definition.runnerName}'</>
+    }
     const { optionsSchema, hasProperties } = parseSchema(runner.optionsSchema)
 
     const updater = makeUpdater(definitionInput, input =>
@@ -146,6 +148,7 @@ const EditEvaluationPage: React.FC<{ taskId: string }> = ({ taskId }) => {
         }
       })
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const updateOptions = (newOptions: any) =>
       updater('options')(JSON.stringify(newOptions))
     const updateTimeout = debounce(updater('timeout'), 500)

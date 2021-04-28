@@ -37,7 +37,7 @@ interface AppProps {
    * Will be called immediately after either a login our logout mutation has been
    * performed.
    */
-  onUserChanged?: (type: 'login' | 'logout') => Promise<void>
+  onUserChanged?: (type: 'login' | 'logout') => Promise<unknown>
 }
 
 const App: React.FC<AppProps> = props => {

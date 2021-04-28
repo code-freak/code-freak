@@ -101,7 +101,7 @@ const ReviewCommentForm: React.FC<ReviewCommentFormProps> = props => {
             >
               <TextArea
                 autoSize={{ minRows: 3, maxRows: 6 }}
-                placeholder={`Add a useful comment…`}
+                placeholder="Add a useful comment…"
               />
             </Form.Item>
             <Row>

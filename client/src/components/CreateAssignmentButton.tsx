@@ -121,7 +121,7 @@ const CreateAssignmentButton = () => {
       onCancel={hideModal}
       width={800}
     >
-      <Space direction={'vertical'}>
+      <Space direction="vertical">
         {inlineError}
         {titleInput}
         <Card>{taskSelection}</Card>

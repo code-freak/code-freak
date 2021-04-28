@@ -20,7 +20,11 @@ import SidebarMenuItem from './SidebarMenuItem'
 
 export const appName = 'Code FREAK'
 
-export const breadcrumbItemRender = (route: Route, _: any, routes: Route[]) => {
+export const breadcrumbItemRender: BasicLayoutProps['itemRender'] = (
+  route,
+  _,
+  routes
+) => {
   const last = routes.indexOf(route) === routes.length - 1
   return last ? (
     <span>{route.breadcrumbName}</span>
@@ -55,7 +59,7 @@ const DefaultLayout: React.FC<DefaultLayoutProps> = ({
 
   const renderRightHeader = () => <RightHeader logout={logout} />
   const renderFooter = () => <AppFooter />
-  const renderHeader = (_: any, defaultDom: React.ReactNode) => (
+  const renderHeader: BasicLayoutProps['headerRender'] = (_, defaultDom) => (
     <>
       {defaultDom}
       {motd ? <Alert banner message={motd} /> : null}

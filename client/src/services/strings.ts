@@ -6,11 +6,7 @@
  * @param max Maximum number of chars
  * @param ellipsisChar Optional a custom ellipsis symbol (default is …/U+2026)
  */
-export const ellipsis = (
-  str: string,
-  max: number,
-  ellipsisChar: string = '…'
-) => {
+export const ellipsis = (str: string, max: number, ellipsisChar = '…') => {
   if (str.length <= max) {
     return str
   }

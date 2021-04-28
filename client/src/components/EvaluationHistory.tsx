@@ -41,7 +41,8 @@ const EvaluationHistory: React.FC<{ answerId: string }> = ({ answerId }) => {
   )
 }
 
-const renderEvaluation = (apolloClient: ApolloClient<any>) => (
+// eslint-disable-next-line @typescript-eslint/ban-types
+const renderEvaluation = (apolloClient: ApolloClient<object>) => (
   evaluation: NonNullable<
     GetEvaluationHistoryQueryResult['data']
   >['answer']['evaluations'][0]

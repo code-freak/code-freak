@@ -14,7 +14,7 @@ const encodeQuery = (params: StringMap) =>
  * @param replace when setting the subPath, should it be replaced or pushed in the history
  * @param deep when getting the subPath, include all levels below the current (true) or only the first level (false)
  */
-const useSubPath = (replace: boolean = true, deep: boolean = false) => {
+const useSubPath = (replace = true, deep = false) => {
   const { url } = useRouteMatch()
   const { pathname } = useLocation()
   const history = useHistory()

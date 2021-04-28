@@ -13,7 +13,7 @@ interface Credentials {
 
 interface LoginProps {
   loggingOut: boolean
-  onSuccessfulLogin: (user: AuthenticatedUser) => Promise<void>
+  onSuccessfulLogin: (user: AuthenticatedUser) => Promise<unknown>
 }
 
 const LoginPage: React.FC<LoginProps> = props => {

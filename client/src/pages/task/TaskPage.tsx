@@ -124,8 +124,10 @@ const TaskPage: React.FC = () => {
     if (enabled) {
       createAnswer({ variables: { taskId: task.id } }).then(onAnswerCreated)
     } else {
+      if (!answer) return
+
       deleteAnswer({
-        variables: { id: answer!.id },
+        variables: { id: answer.id },
         refetchQueries: [
           task.assignment
             ? {

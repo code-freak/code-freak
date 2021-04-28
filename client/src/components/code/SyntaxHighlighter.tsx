@@ -6,7 +6,7 @@ import './SyntaxHighlighter.less'
 export interface SyntaxHighlighterProps {
   firstLineNumber?: number
   highlightLines?: number[]
-  onLineNumberClick?: (lineNumber: number, elem: HTMLSpanElement) => any
+  onLineNumberClick?: (lineNumber: number, elem: HTMLSpanElement) => void
   language?: string
   noLineNumbers?: boolean
 }

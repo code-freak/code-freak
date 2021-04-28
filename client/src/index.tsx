@@ -20,6 +20,7 @@ const renderApp = () => {
   // Based on https://github.com/apollographql/apollo-link/issues/197#issuecomment-363387875
   // We need to re-connect the websocket so that the new session cookie is used for the handshake
   const resetWebsocket = () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const websocket = (wsLink as any).subscriptionClient
     websocket.close(true, true)
     websocket.connect()

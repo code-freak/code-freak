@@ -13,7 +13,7 @@ const generateMarkdownProview: GenerateMarkdownPreview = markdown =>
 const EditableMarkdown: React.FC<{
   content?: string | null
   editable: boolean
-  onSave: (newContent: string | undefined) => Promise<any>
+  onSave: (newContent: string | undefined) => Promise<unknown>
 }> = ({ content, editable, onSave }) => {
   const [editing, setEditing] = useState(false)
   const [newContent, setNewContent] = useState<string>()

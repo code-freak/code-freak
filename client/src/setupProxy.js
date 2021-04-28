@@ -1,5 +1,6 @@
 // workaround for https://github.com/facebook/create-react-app/issues/5280
 
+// eslint-disable-next-line @typescript-eslint/no-var-requires
 const proxy = require('http-proxy-middleware')
 
 const proxyHost = process.env.NODE_PROXY_HOST || 'localhost'

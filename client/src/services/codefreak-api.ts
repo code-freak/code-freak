@@ -15,11 +15,15 @@ import { GraphQLError } from 'graphql'
 
 export * from '../generated/graphql'
 
+type CommonNetworkError = Pick<
+  ServerError,
+  'response' | 'statusCode' | 'message'
+>
 const isNetworkError = (
-  error: any
-): error is Pick<ServerError, 'response' | 'statusCode' | 'message'> => {
+  error?: Partial<CommonNetworkError>
+): error is CommonNetworkError => {
   return (
-    typeof error === 'object' &&
+    !!error &&
     'response' in error &&
     'statusCode' in error &&
     'message' in error

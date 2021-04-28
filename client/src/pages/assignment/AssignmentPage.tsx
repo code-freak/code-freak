@@ -123,10 +123,10 @@ const AssignmentPage: React.FC = () => {
 
   const renderDate = (
     label: string,
-    onOk: (date?: string) => any,
+    onOk: (date?: string) => void,
     value?: string | null
   ) => {
-    const handleClear = (v: any) => (v === null ? onOk() : noop())
+    const handleClear = (v: Moment | null) => (v === null ? onOk() : noop())
     return assignment.editable ? (
       <Descriptions.Item label={label}>
         <DatePicker
@@ -252,7 +252,7 @@ const StatusSteps: React.FC<{
   status: AssignmentStatus
   updater: Updater<UpdateAssignmentMutationVariables>
   input: UpdateAssignmentMutationVariables
-  mutation: (args: { variables: UpdateAssignmentMutationVariables }) => any
+  mutation: (args: { variables: UpdateAssignmentMutationVariables }) => void
 }> = props => {
   const { status, updater, mutation, input } = props
   const [stepsExpanded, setStepsExpanded] = useState(false)
@@ -422,7 +422,7 @@ const AddTasksButton: React.FC<{
 const OpenAssignmentButton: React.FC<
   {
     input: UpdateAssignmentMutationVariables
-    mutation: (args: { variables: UpdateAssignmentMutationVariables }) => any
+    mutation: (args: { variables: UpdateAssignmentMutationVariables }) => void
   } & Omit<DropdownButtonProps, 'overlay'>
 > = ({ input, mutation, ...buttonProps }) => {
   const [modalVisible, setModalVisible] = useState(false)
@@ -495,7 +495,7 @@ const OpenAssignmentButton: React.FC<
       <Modal
         visible={modalVisible}
         onCancel={hideModal}
-        title={'Open submissions for specific period of time'}
+        title="Open submissions for specific period of time"
         okButtonProps={{
           disabled: period.minutes() < 1
         }}

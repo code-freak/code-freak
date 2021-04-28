@@ -57,7 +57,7 @@ interface AssignmentListProps {
   list: Assignment[]
   sortMethod?: string
   filterCriteria?: string
-  onDelete: (assignmentId: string) => Promise<any>
+  onDelete: (assignmentId: string) => Promise<unknown>
 }
 
 const AssignmentList = (props: AssignmentListProps) => {
@@ -75,7 +75,7 @@ const AssignmentList = (props: AssignmentListProps) => {
 }
 
 interface RenderProps {
-  delete: (assignmentId: string) => Promise<any>
+  delete: (assignmentId: string) => Promise<unknown>
 }
 
 const renderAssignment = (props: RenderProps) => (assignment: Assignment) => {
@@ -119,7 +119,7 @@ const renderAssignment = (props: RenderProps) => (assignment: Assignment) => {
           <Authorized authority="ROLE_ADMIN">{authorTag}</Authorized>
           <Authorized authority="ROLE_TEACHER">{updatedAtTag}</Authorized>
           {assignment.deletable ? (
-            <Tooltip title={'Delete assignment'} placement="left">
+            <Tooltip title="Delete assignment" placement="left">
               <Button
                 onClick={confirmDelete}
                 type="dashed"
