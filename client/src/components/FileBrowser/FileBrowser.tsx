@@ -67,7 +67,8 @@ const FileBrowser: React.FC<FileBrowserProps> = props => {
     reloadFiles,
     deleteFiles,
     createDirectory,
-    uploadFiles
+    uploadFiles,
+    renameFile
   } = useFileCollection(
     {
       type,
@@ -92,7 +93,7 @@ const FileBrowser: React.FC<FileBrowserProps> = props => {
   const onRenameFile = async (file: FileBrowserFile, newName: string) => {
     setCutFiles(undefined)
     const target = join(dirname(file.path), newName)
-    return moveFiles([file.path], target)
+    return renameFile(file.path, target)
   }
 
   const onDragDropMove = async (

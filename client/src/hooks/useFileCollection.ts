@@ -6,6 +6,7 @@ import {
   useDeleteFilesMutation,
   useListFilesQuery,
   useMoveFilesMutation,
+  useRenameFileMutation,
   useUploadFilesMutation
 } from '../generated/graphql'
 import { basename, join } from 'path'
@@ -18,6 +19,7 @@ export interface FileCollectionScope {
   deleteFiles: (name: string[]) => Promise<string[]>
   createDirectory: (name: string) => Promise<string>
   moveFiles: (sources: string[], target: string) => Promise<string[]>
+  renameFile: (source: string, target: string) => Promise<string>
   uploadFiles: (path: string, files: File[]) => Promise<string[]>
 }
 
@@ -51,6 +53,9 @@ const useFileCollection = (
   const [moveFiles, moveFileResult] = useMoveFilesMutation(
     commonMutationOptions
   )
+  const [renameFile, renameFileResult] = useRenameFileMutation(
+    commonMutationOptions
+  )
   const [createDirectory, createDirectoryResult] = useCreateDirectoryMutation(
     commonMutationOptions
   )
@@ -67,7 +72,8 @@ const useFileCollection = (
       deleteFileResult.loading ||
       moveFileResult.loading ||
       createDirectoryResult.loading ||
-      uploadFilesResult.loading,
+      uploadFilesResult.loading ||
+      renameFileResult.loading,
     reloadFiles: () => filesQuery.refetch().then(() => undefined),
     createDirectory: (dirName: string) => {
       const path = abspath(dirName)
@@ -121,6 +127,18 @@ const useFileCollection = (
           )
         }
         return sourcePaths
+      })
+    },
+    renameFile: (source, target) => {
+      return renameFile({
+        variables: {
+          context,
+          source,
+          target
+        }
+      }).then(() => {
+        messageService.success(`Renamed ${source} to ${target}`)
+        return target
       })
     },
     uploadFiles: (dir, files) => {

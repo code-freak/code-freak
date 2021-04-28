@@ -10,6 +10,14 @@ mutation MoveFiles(
   moveFiles(fileContext: $context, sources: $sourcePaths, target: $target)
 }
 
+mutation RenameFile(
+  $context: FileContextInput!
+  $source: String!
+  $target: String!
+) {
+  renameFile(fileContext: $context, source: $source, target: $target)
+}
+
 mutation CreateDirectory($context: FileContextInput!, $path: String!) {
   createDirectory(fileContext: $context, path: $path)
 }
