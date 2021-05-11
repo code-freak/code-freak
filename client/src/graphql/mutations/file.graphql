@@ -22,6 +22,10 @@ mutation CreateDirectory($context: FileContextInput!, $path: String!) {
   createDirectory(fileContext: $context, path: $path)
 }
 
-mutation UploadFiles($context: FileContextInput!, $dir: String!, $files: [Upload!]!) {
+mutation UploadFiles(
+  $context: FileContextInput!
+  $dir: String!
+  $files: [Upload!]!
+) {
   uploadFiles(fileContext: $context, dir: $dir, files: $files)
 }

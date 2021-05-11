@@ -42,11 +42,8 @@ import EditEvaluationPage from '../evaluation/EditEvaluationPage'
 import IdeSettingsForm, {
   IdeSettingsModel
 } from '../../components/IdeSettingsForm'
-<<<<<<< HEAD
 import FileBrowser from '../../components/FileBrowser'
-=======
 import Markdown from '../../components/Markdown'
->>>>>>> origin/master
 
 const { TabPane } = Tabs
 
