@@ -4,6 +4,8 @@ plugins {
 
 node {
   download = true
+  // node 16 comes with npm v7
+  version = "16.1.0"
   npmInstallCommand = "ci"
 }
 
