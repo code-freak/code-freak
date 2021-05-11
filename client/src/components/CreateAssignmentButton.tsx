@@ -86,6 +86,7 @@ const CreateAssignmentButton = () => {
 
   const titleInput = modalVisible ? ( // re-create for autoFocus
     <Input
+      id="new-assignment-title"
       onPressEnter={okButtonDisabled ? noop : createAssignment}
       autoFocus
       value={title}

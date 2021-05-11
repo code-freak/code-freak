@@ -6,10 +6,12 @@ import java.time.temporal.ChronoUnit
 import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
+import org.junit.runner.RunWith
 import org.mockito.InjectMocks
 import org.mockito.Mock
-import org.mockito.MockitoAnnotations
+import org.mockito.junit.MockitoJUnitRunner
 
+@RunWith(MockitoJUnitRunner::class)
 class SubmissionTest {
   @Mock
   lateinit var user: User
@@ -22,7 +24,6 @@ class SubmissionTest {
 
   @Before
   fun init() {
-    MockitoAnnotations.initMocks(this)
     whenever(assignment.deadline).thenReturn(null)
     whenever(assignment.timeLimit).thenReturn(null)
   }

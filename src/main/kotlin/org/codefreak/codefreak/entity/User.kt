@@ -14,7 +14,7 @@ import org.springframework.security.core.userdetails.UserDetails
 @Entity
 class User(private val username: String) : BaseEntity(), UserDetails, CredentialsContainer {
   @Column(unique = true)
-  val usernameCanonical = username.toLowerCase()
+  val usernameCanonical = username.lowercase()
 
   @ElementCollection(targetClass = Role::class, fetch = FetchType.EAGER)
   @CollectionTable

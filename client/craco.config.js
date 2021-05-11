@@ -18,6 +18,18 @@ const createBuildDefinitions = () => {
 }
 
 module.exports = {
+  eslint: {
+    pluginOptions: (currentOptions, { env }) => {
+      if (env === 'development') {
+        return {
+          ...currentOptions,
+          // Make compilation continue with errors during development
+          failOnError: false
+        }
+      }
+      return currentOptions
+    }
+  },
   plugins: [
     { plugin: CracoAntDesignPlugin },
     { plugin: CracoYamlPlugin },
@@ -33,7 +45,9 @@ module.exports = {
         definitions: [
           createBuildDefinitions,
           {
-            'process.env.CODEFREAK_DOCS_BASE_URL': JSON.stringify('https://docs.codefreak.org/codefreak/')
+            'process.env.CODEFREAK_DOCS_BASE_URL': JSON.stringify(
+              'https://docs.codefreak.org/codefreak/'
+            )
           }
         ]
       }

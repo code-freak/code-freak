@@ -58,8 +58,10 @@ class CodeclimateRunner : AbstractDockerRunner() {
         severity = CODECLIMATE_SEVERITY_MAP[issue.severity]
         fileContext = FileContext(
             issue.location.path,
-            lineStart = issue.location.lines.begin,
-            lineEnd = issue.location.lines.end
+            lineStart = issue.location.lines?.begin ?: issue.location.positions?.begin?.line,
+            lineEnd = issue.location.lines?.end ?: issue.location.positions?.end?.line,
+            columnStart = issue.location.positions?.begin?.column,
+            columnEnd = issue.location.positions?.end?.column
         )
       }
     }
@@ -126,15 +128,26 @@ class CodeclimateRunner : AbstractDockerRunner() {
       var body = ""
     }
 
-    // TODO support other location formats (needs custom deserializer)
-    //      see https://github.com/codeclimate/spec/blob/master/SPEC.md#locations
     class Location {
       var path = ""
-      var lines = Lines()
+      var lines: Lines? = null
+      var positions: Positions? = null
 
       class Lines {
         var begin = 0
         var end = 0
+      }
+
+      class Positions {
+        var begin: Position? = null
+        var end: Position? = null
+      }
+
+      // TODO: support "offset" position type
+      // https://github.com/codeclimate/platform/blob/master/spec/analyzers/SPEC.md#positions
+      class Position {
+        var line: Int? = null
+        var column: Int? = null
       }
     }
   }

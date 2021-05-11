@@ -27,7 +27,7 @@ class LdapUserDetailsContextMapper : UserDetailsContextMapper {
     if (config.ldap.activeDirectory) {
       config.ldap.roleMappings
     } else {
-      config.ldap.roleMappings.mapKeys { "ROLE_" + it.key.toUpperCase() }
+      config.ldap.roleMappings.mapKeys { "ROLE_" + it.key.uppercase() }
     }
   }
 

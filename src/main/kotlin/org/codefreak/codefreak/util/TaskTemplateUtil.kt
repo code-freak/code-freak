@@ -8,7 +8,7 @@ enum class TaskTemplate {
 
 object TaskTemplateUtil {
   fun readTemplateTar(template: TaskTemplate): ByteArray {
-    val path = "org/codefreak/templates/${template.name.toLowerCase()}.tar"
+    val path = "org/codefreak/templates/${template.name.lowercase()}.tar"
     return ClassPathResource(path).inputStream.use { it.readBytes() }
   }
 }

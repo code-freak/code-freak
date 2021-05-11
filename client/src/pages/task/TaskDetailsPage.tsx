@@ -21,7 +21,6 @@ import {
 import { CheckboxChangeEvent } from 'antd/lib/checkbox'
 import { JSONSchema6 } from 'json-schema'
 import { useState } from 'react'
-import ReactMarkdown from 'react-markdown'
 import { Link } from 'react-router-dom'
 import AsyncPlaceholder from '../../components/AsyncContainer'
 import EditableMarkdown from '../../components/EditableMarkdown'
@@ -43,7 +42,11 @@ import EditEvaluationPage from '../evaluation/EditEvaluationPage'
 import IdeSettingsForm, {
   IdeSettingsModel
 } from '../../components/IdeSettingsForm'
+<<<<<<< HEAD
 import FileBrowser from '../../components/FileBrowser'
+=======
+import Markdown from '../../components/Markdown'
+>>>>>>> origin/master
 
 const { TabPane } = Tabs
 
@@ -110,7 +113,7 @@ const TaskDetailsPage: React.FC<{ editable: boolean }> = ({ editable }) => {
   const details = (
     <Card title="Instructions">
       {task.body ? (
-        <ReactMarkdown source={task.body} />
+        <Markdown>{task.body}</Markdown>
       ) : (
         <Empty description="This task has no extra instructions. Take a look at the provided files." />
       )}

@@ -104,7 +104,7 @@ class LtiAuthenticationFilter : OIDCAuthenticationFilter() {
 
     val header = JWSHeader(
         alg, null, null, null, null, null, null, null, null, null,
-        authenticationSignerService.defaultSignerKeyId, null, null
+        authenticationSignerService.defaultSignerKeyId, true, null, null
     )
     val jwt = SignedJWT(header, claimsSet.build())
 

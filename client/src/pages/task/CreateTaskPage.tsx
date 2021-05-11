@@ -66,7 +66,6 @@ const CreateTaskPage: React.FC = () => {
 }
 
 interface TaskTemplateCardProps {
-  key: string
   title: string
   description: string
   logo: React.ReactNode
@@ -75,14 +74,7 @@ interface TaskTemplateCardProps {
 }
 
 const TaskTemplateCard = (props: TaskTemplateCardProps) => (
-  <Col
-    xs={24}
-    sm={12}
-    md={6}
-    xl={4}
-    style={{ marginBottom: 16 }}
-    key={props.key}
-  >
+  <Col xs={24} sm={12} md={6} xl={4} style={{ marginBottom: 16 }}>
     <Card
       cover={<div style={{ padding: '2em 2em 0' }}>{props.logo}</div>}
       actions={[

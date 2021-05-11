@@ -5,12 +5,11 @@ plugins {
   id "org.jetbrains.kotlin.kapt" version "1.5.0"
   id 'org.springframework.boot' version '2.4.5'
   id 'com.diffplug.spotless' version '5.12.4'
-  id 'com.bertramlabs.asset-pipeline' version '3.0.10'
   id 'jacoco'
-  id "com.gorylenko.gradle-git-properties" version "2.2.4"
+  id "com.gorylenko.gradle-git-properties" version "2.3.1"
   id 'net.researchgate.release' version '2.8.1'
   id 'org.liquibase.gradle' version '2.0.4'
-  id 'com.google.cloud.tools.jib' version '2.8.0'
+  id 'com.google.cloud.tools.jib' version '3.0.0'
 }
 
 apply plugin: 'io.spring.dependency-management'
@@ -50,8 +49,8 @@ dependencies {
   implementation 'org.springframework.security:spring-security-ldap'
   implementation 'com.fasterxml.jackson.module:jackson-module-kotlin'
   implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.12.3'
-  implementation 'org.jetbrains.kotlin:kotlin-reflect:1.4.32'
-  implementation 'org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.4.32'
+  implementation 'org.jetbrains.kotlin:kotlin-reflect:1.5.0'
+  implementation 'org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.5.0'
   implementation 'com.spotify:docker-client:8.16.0'
   implementation 'org.apache.commons:commons-compress:1.20'
   implementation 'org.apache.commons:commons-csv:1.8'
@@ -62,7 +61,7 @@ dependencies {
   implementation 'org.eclipse.jgit:org.eclipse.jgit:5.11.0.202103091610-r'
   implementation 'org.eclipse.jgit:org.eclipse.jgit.archive:5.11.0.202103091610-r'
   implementation 'org.eclipse.jgit:org.eclipse.jgit.ssh.jsch:5.11.0.202103091610-r'
-  implementation 'org.liquibase:liquibase-core:4.3.3'
+  implementation 'org.liquibase:liquibase-core:4.3.5'
   implementation 'com.graphql-java-kickstart:graphql-spring-boot-starter:7.2.0'
   implementation 'com.expediagroup:graphql-kotlin-spring-server:2.1.2'
   implementation 'com.vladmihalcea:hibernate-types-52:2.10.4'
@@ -115,6 +114,7 @@ dependencies {
 
 compileKotlin {
   kotlinOptions {
+    allWarningsAsErrors = true
     freeCompilerArgs = ['-Xjsr305=strict']
     jvmTarget = '1.8'
   }
@@ -122,6 +122,7 @@ compileKotlin {
 
 compileTestKotlin {
   kotlinOptions {
+    allWarningsAsErrors = true
     freeCompilerArgs = ['-Xjsr305=strict']
     jvmTarget = '1.8'
   }

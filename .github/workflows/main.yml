@@ -34,13 +34,34 @@ jobs:
       - name: Cache node modules
         uses: actions/cache@v2
         with:
-          path: ~/.npm
+          path: |
+            ~/.npm
+            ~/.cache/Cypress
           key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-node-
 
-      - name: Test
+      - name: Run unit tests
         run: ./gradlew check jibDockerBuild -x bootJar
+
+      - name: Run end-to-end tests
+        uses: cypress-io/github-action@v2
+        with:
+          working-directory: client
+          install: false
+          start: docker run -d -e CODEFREAK_REVERSE_PROXY_URL="http://$(docker network inspect bridge -f '{{ (index .IPAM.Config 0).Gateway }}')" -v /var/run/docker.sock:/var/run/docker.sock -p8080:8080 --name=cfreak-cypress cfreak/codefreak
+          config-file: cypress/cypress-ci.json
+          wait-on: 'http://localhost:8080'
+          wait-on-timeout: 180
+          headless: true
+          record: true
+          group: merge
+          tag: ${{ github.event_name }}
+        env:
+          CYPRESS_PROJECT_ID: ${{ secrets.CYPRESS_PROJECT_ID }}
+          CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          COMMIT_INFO_MESSAGE: ${{ github.event.pull_request.title }}
 
       - name: Prepare cache
         run: |

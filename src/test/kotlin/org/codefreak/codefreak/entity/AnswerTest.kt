@@ -3,12 +3,13 @@ package org.codefreak.codefreak.entity
 import com.nhaarman.mockitokotlin2.whenever
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
-import org.junit.Before
 import org.junit.Test
+import org.junit.runner.RunWith
 import org.mockito.InjectMocks
 import org.mockito.Mock
-import org.mockito.MockitoAnnotations
+import org.mockito.junit.MockitoJUnitRunner
 
+@RunWith(MockitoJUnitRunner::class)
 class AnswerTest {
   @Mock
   lateinit var assignment: Assignment
@@ -21,12 +22,6 @@ class AnswerTest {
 
   @InjectMocks
   lateinit var answer: Answer
-
-  @Before
-  fun init() {
-    MockitoAnnotations.initMocks(this)
-    whenever(task.assignment).thenReturn(assignment)
-  }
 
   @Test
   fun `answer is editable by default`() {

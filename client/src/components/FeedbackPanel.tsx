@@ -1,10 +1,10 @@
 import React from 'react'
 import { Feedback } from '../generated/graphql'
 import { Collapse } from 'antd'
-import ReactMarkdown from 'react-markdown'
 import { CodeViewerCard } from './CodeViewer'
 import FeedbackIcon from './FeedbackIcon'
 import FileContextTag from './FileContextTag'
+import Markdown from './Markdown'
 
 interface FeedbackPanelProps {
   answerId: string
@@ -28,9 +28,8 @@ const renderFeedbackPanel: (
         status={feedback.status || undefined}
         severity={feedback.severity || undefined}
       />
-      <ReactMarkdown
-        source={feedback.summary}
-        allowedTypes={[
+      <Markdown
+        allowedElements={[
           'inlineCode',
           'text',
           'strong',
@@ -39,7 +38,9 @@ const renderFeedbackPanel: (
           'link'
         ]}
         unwrapDisallowed
-      />
+      >
+        {feedback.summary}
+      </Markdown>
     </>
   )
   let body = null
@@ -59,11 +60,9 @@ const renderFeedbackPanel: (
     body = (
       <>
         {body}
-        <ReactMarkdown
-          source={feedback.longDescription}
-          escapeHtml={false}
-          className="feedback-long-description"
-        />
+        <Markdown className="feedback-long-description">
+          {feedback.longDescription}
+        </Markdown>
       </>
     )
   }

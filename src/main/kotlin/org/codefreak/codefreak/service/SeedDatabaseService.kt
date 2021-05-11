@@ -65,7 +65,7 @@ class SeedDatabaseService : ApplicationListener<ContextRefreshedEvent> {
       val templateTar = TaskTemplateUtil.readTemplateTar(it)
       val task = taskTarService.createFromTar(templateTar, teacher)
 
-      val templateName = it.name.toLowerCase().capitalize()
+      val templateName = it.name.lowercase().replaceFirstChar { char -> char.uppercase() }
       task.title = "Program in $templateName"
       taskService.saveTask(task)
       tasks.add(task)

@@ -134,7 +134,9 @@ The following sample users are pre-configured for development.
 
 == Running tests
 
-To run the tests you need a working Docker connection.
+=== Unit tests
+
+To run the unit tests you need a working Docker connection.
 It is also possible to use the Vagrant machine for Testing:
 
 [source,shell]
@@ -143,6 +145,27 @@ It is also possible to use the Vagrant machine for Testing:
 $ ./gradlew test          # for testing with local Docker daemon
 $ ./gradlew vagrantTest   # for testing with Vagrant Docker daemon
 -----
+
+The unit tests for the backend are run with https://junit.org/junit4/[JUnit 4]. The test files are found in the `src/test/kotlin/org/codefreak/codefreak` directory in subpackages respectively to the packages of the classes they test.
+
+=== End-to-end tests
+
+End-to-end tests run with cypress. Cypress will be installed with npm automatically, but if you're running on Linux you might need to install some additional libraries. Please refer to https://docs.cypress.io/guides/getting-started/installing-cypress#Linux[the official cypress documentation] on how to install these dependencies.
+
+The `client/cypress/integration` directory contains all the test files, the `client/cypress/support` directory contains files for customizing cypress (i.e. adding custom global commands). You will also find screenshots and videos of the test runs in subdirectories of `client/cypress`.
+
+The `client/cypress.json` file contains global configurations for the end-to-end tests.
+
+Please read https://docs.cypress.io/[the official cypress documentation] for information on how to write these tests.
+
+The end-to-end tests are run from within the `client` directory with the following commands:
+
+[source,shell]
+[source]
+----
+$ npm run cypress:open  # opens the cypress gui where e2e tests can be run (with graphical output)
+$ npm run cypress:run   # runs all e2e tests headless
+----
 
 == Fix linting issues
 

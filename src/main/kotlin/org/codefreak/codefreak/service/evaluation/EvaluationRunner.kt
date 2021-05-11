@@ -28,7 +28,7 @@ interface EvaluationRunner {
   fun summarize(feedbackList: List<Feedback>): String {
     val severityCount = feedbackList.groupingBy { it.severity ?: Feedback.Severity.INFO }.eachCount()
     return severityCount.toSortedMap()
-        .map { (severity, count) -> "${count}x ${severity.name.toLowerCase()}" }
+        .map { (severity, count) -> "${count}x ${severity.name.lowercase()}" }
         .joinToString(" / ")
   }
 

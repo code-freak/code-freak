@@ -14,13 +14,14 @@ import org.codefreak.codefreak.repository.SubmissionRepository
 import org.codefreak.codefreak.service.file.FileService
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.equalTo
-import org.junit.Before
 import org.junit.Test
+import org.junit.runner.RunWith
 import org.mockito.InjectMocks
 import org.mockito.Mock
 import org.mockito.Mockito.`when`
-import org.mockito.MockitoAnnotations
+import org.mockito.junit.MockitoJUnitRunner
 
+@RunWith(MockitoJUnitRunner::class)
 class AssignmentAndSubmissionServiceTest {
   private val assignment = Assignment("Assignment 1", User("user"), null)
   private val user = User("user")
@@ -47,11 +48,6 @@ class AssignmentAndSubmissionServiceTest {
   val assignmentService = AssignmentService()
   @InjectMocks
   val submissionService = SubmissionService()
-
-  @Before
-  fun init() {
-    MockitoAnnotations.initMocks(this)
-  }
 
   @Test
   fun `findAssignment by ID`() {

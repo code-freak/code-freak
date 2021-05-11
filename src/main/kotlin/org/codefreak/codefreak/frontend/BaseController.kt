@@ -40,7 +40,7 @@ abstract class BaseController {
 
   protected fun download(filename: String, writer: (out: OutputStream) -> Unit): ResponseEntity<StreamingResponseBody> {
     // allow only alphanumeric characters for download name and replace everything else by dash
-    val sanitizedFilename = filename.toLowerCase().replace("[^\\w_\\-.]+".toRegex(), "-").trim('-')
+    val sanitizedFilename = filename.lowercase().replace("[^\\w_\\-.]+".toRegex(), "-").trim('-')
     val headers = HttpHeaders().apply {
       add("Content-Disposition", "attachment; filename=$sanitizedFilename")
     }

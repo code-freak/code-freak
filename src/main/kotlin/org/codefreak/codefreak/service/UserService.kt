@@ -20,7 +20,7 @@ class UserService : BaseService() {
    */
   @Transactional
   fun getOrCreateUser(username: String, patch: User.() -> Unit = {}): User {
-    val user: User = userRepository.findByUsernameCanonical(username.toLowerCase()).orElseGet {
+    val user: User = userRepository.findByUsernameCanonical(username.lowercase()).orElseGet {
       userRepository.save(User(username))
     }
     user.patch()
@@ -28,7 +28,7 @@ class UserService : BaseService() {
   }
 
   @Transactional(readOnly = true)
-  fun getUser(username: String): User = userRepository.findByUsernameCanonical(username.toLowerCase()).orElseThrow {
+  fun getUser(username: String): User = userRepository.findByUsernameCanonical(username.lowercase()).orElseThrow {
     EntityNotFoundException("User cannot be found")
   }
 }
