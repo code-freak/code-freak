@@ -29,6 +29,7 @@
     "@types/react-router-dom": "5.1.7",
     "@types/react-syntax-highlighter": "11.0.5",
     "@types/use-persisted-state": "0.3.0",
+    "@types/wicg-entries-api": "2020.8.0",
     "@typescript-eslint/eslint-plugin": "4.22.0",
     "@typescript-eslint/parser": "4.22.0",
     "a11y-react-emoji": "1.1.3",
