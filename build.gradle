@@ -84,7 +84,7 @@ dependencies {
   testImplementation 'com.tngtech.archunit:archunit-junit4:0.20.0'
 
   // workaround for https://github.com/spotify/docker-client/issues/1030
-  implementation 'org.glassfish.jersey.inject:jersey-hk2:2.34'
+  implementation 'org.glassfish.jersey.inject:jersey-hk2:3.0.2'
 
   // Docker Client doesn't work with jersey-common >=2.29 because of missing Base64 class
   implementation('org.glassfish.jersey.core:jersey-common') {
