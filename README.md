@@ -33,13 +33,13 @@ The following command will start the latest development version of Code FREAK ba
 
 ```shell script
 docker run -it --rm \
+    --network=host \
     -e SPRING_PROFILES_ACTIVE=dev \
     -v /var/run/docker.sock:/var/run/docker.sock \
-    -p 8080:8080 \
     cfreak/codefreak:canary
 ```
 
-The UI is accessible at http://localhost:8080.
+Afterwards, the UI is accessible in your browser at http://localhost:8080.
 Log in using `teacher` and password `123`.
 Additionally, the users `admin` and `student` are available with their corresponding roles and the same password `123`.
 Using the "dev" environment will seed the database with some example assignments and tasks.
