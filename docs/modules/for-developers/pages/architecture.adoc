@@ -47,3 +47,7 @@ and crash the backend application.
 
 Because a single Docker host does not scale very well we plan to support other container orchestration systems in the
 future.
+
+== Data Structure
+The following schema is used in the underlying database:
+image:for-developers:Code FREAK Schema.png[Code FREAK Schema, 600]
