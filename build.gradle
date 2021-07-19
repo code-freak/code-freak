@@ -55,7 +55,7 @@ dependencies {
   implementation 'org.apache.commons:commons-compress:1.21'
   implementation 'org.apache.commons:commons-csv:1.8'
   implementation 'commons-io:commons-io:2.11.0'
-  implementation 'io.sentry:sentry-logback:4.3.0'
+  implementation 'io.sentry:sentry-logback:5.0.1'
   implementation 'com.github.hsingh:java-shortuuid:2a4d72f'
   implementation 'com.github.Open-MBEE:junit-xml-parser:1.0.0'
   implementation 'org.mitre:openid-connect-client:1.3.3'
